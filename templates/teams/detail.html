@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} - CricketIQ{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('teams') }}" class="btn btn-outline-secondary btn-sm mb-3">
+        <i class="fas fa-arrow-left"></i> Back to Teams
+    </a>
+    <h1 class="mb-2">{{ team.name }}</h1>
+    <p class="text-muted">{{ team.short_name }} | {{ team.city }}</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Team Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Team Name:</strong>
+                    <p>{{ team.name }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong>Short Name:</strong>
+                    <p>{{ team.short_name }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong>City:</strong>
+                    <p>{{ team.city }}</p>
+                </div>
+                {% if team.home_ground %}
+                    <div class="mb-3">
+                        <strong>Home Ground:</strong>
+                        <p>{{ team.home_ground }}</p>
+                    </div>
+                {% endif %}
+                {% if team.founded_year %}
+                    <div class="mb-3">
+                        <strong>Founded:</strong>
+                        <p>{{ team.founded_year }}</p>
+                    </div>
+                {% endif %}
+                {% if team.owner %}
+                    <div class="mb-3">
+                        <strong>Owner:</strong>
+                        <p>{{ team.owner }}</p>
+                    </div>
+                {% endif %}
+                {% if team.coach %}
+                    <div class="mb-3">
+                        <strong>Coach:</strong>
+                        <p>{{ team.coach }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        {% if stats %}
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Season Statistics ({{ stats.season }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Matches Played:</strong>
+                        <p class="h5">{{ stats.matches_played }}</p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Wins:</strong>
+                            <p class="h5 text-success">{{ stats.wins }}</p>
+                        </div>
+                        <div class="col-6">
+                            <strong>Losses:</strong>
+                            <p class="h5 text-danger">{{ stats.losses }}</p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Points:</strong>
+                        <p class="h5">{{ stats.points }}</p>
+                    </div>
+                    {% if stats.position %}
+                        <div class="mb-3">
+                            <strong>Table Position:</strong>
+                            <p class="h5">
+                                <span class="badge bg-primary">{{ stats.position }}</span>
+                            </p>
+                        </div>
+                    {% endif %}
+                    {% if stats.run_rate %}
+                        <div class="mb-3">
+                            <strong>Run Rate:</strong>
+                            <p class="h5">{{ stats.run_rate|round(2) }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Players Section -->
+<div class="mb-4">
+    <h3 class="mb-3">
+        <i class="fas fa-users"></i> Team Players ({{ players|length }})
+    </h3>
+    
+    {% if players %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Jersey #</th>
+                        <th>Player Name</th>
+                        <th>Role</th>
+                        <th>Batting Style</th>
+                        <th>Bowling Style</th>
+                        <th>Country</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                        <tr>
+                            <td>
+                                {% if player.jersey_number %}
+                                    <strong>#{{ player.jersey_number }}</strong>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ player.name }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ player.role }}</span>
+                            </td>
+                            <td>{{ player.batting_style|default('—') }}</td>
+                            <td>{{ player.bowling_style|default('—') }}</td>
+                            <td>{{ player.country|default('—') }}</td>
+                            <td>
+                                <a href="{{ url_for('player_detail', player_id=player.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> No players assigned to this team.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
