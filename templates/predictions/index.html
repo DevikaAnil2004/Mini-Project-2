@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Predictions — CricketIQ{% endblock %}
+{% block meta_description %}Simulate an IPL matchup for win probabilities, or project a player's runs in their next match.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">Predictions</li>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div class="page-header__row">
+    <div>
+      <p class="eyebrow">Intelligence</p>
+      <h1>Predictions</h1>
+      <p class="lede">
+        Pick two sides for a win-probability split, or a batter for a projected score.
+        Both are statistical estimates from historical form — not betting advice.
+      </p>
+    </div>
+  </div>
+</header>
+
+<section aria-labelledby="matchup-heading" data-reveal="1">
+  <div class="section__head">
+    <h2 class="section__title" id="matchup-heading">{{ icon('swap') }} Matchup simulator</h2>
+  </div>
+
+  <div class="split-sticky">
+    <form class="panel" id="predictionForm" novalidate>
+      <div class="panel__head">
+        <h3 class="panel__title">{{ icon('shield') }} Choose two sides</h3>
+      </div>
+      <div class="panel__body">
+        <div class="field" data-field="team1">
+          <label class="field__label" for="team1Select">Team A <span class="field__req" aria-hidden="true">*</span></label>
+          <select class="select" id="team1Select" name="team1" required>
+            <option value="">Select a team</option>
+            {% for team in teams %}
+              <option value="{{ team.id }}" data-name="{{ team.short_name }}">{{ team.name }}</option>
+            {% endfor %}
+          </select>
+          <p class="field__error" data-error>{{ icon('alert-circle') }}<span>Pick a team.</span></p>
+        </div>
+
+        <div class="field" data-field="team2">
+          <label class="field__label" for="team2Select">Team B <span class="field__req" aria-hidden="true">*</span></label>
+          <select class="select" id="team2Select" name="team2" required>
+            <option value="">Select a team</option>
+            {% for team in teams %}
+              <option value="{{ team.id }}" data-name="{{ team.short_name }}">{{ team.name }}</option>
+            {% endfor %}
+          </select>
+          <p class="field__error" data-error>{{ icon('alert-circle') }}<span>Pick a second, different team.</span></p>
+        </div>
+      </div>
+      <div class="panel__foot">
+        <button type="submit" class="btn btn--primary btn--block" id="predictBtn">
+          <span class="btn__spinner" aria-hidden="true"></span>
+          {{ icon('sparkles') }} Simulate matchup
+        </button>
+      </div>
+    </form>
+
+    <div>
+      <div class="empty" id="placeholderCard">
+        <span class="empty__icon">{{ icon('compass') }}</span>
+        <h3>Nothing simulated yet</h3>
+        <p>Choose two different sides on the left. The model weighs each team's historical results to produce a win-probability split.</p>
+      </div>
+
+      <div class="panel is-hidden" id="resultsCard" aria-live="polite">
+        <div class="panel__head">
+          <h3 class="panel__title">{{ icon('bar-chart') }} Win probability</h3>
+          <span class="section__count">Based on historical results</span>
+        </div>
+        <div class="panel__body stack stack-6">
+
+          <div class="versus">
+            <div class="versus__side">
+              <span class="versus__name" id="team1NameResult">Team A</span>
+              <span class="versus__score num" id="team1ProbResult">—</span>
+            </div>
+            <div class="chart-frame chart-frame--sm" style="width: 128px;">
+              <canvas id="probabilityChart" role="img"
+                      aria-label="Doughnut chart showing the win probability split between the two teams"></canvas>
+            </div>
+            <div class="versus__side versus__side--away">
+              <span class="versus__name" id="team2NameResult">Team B</span>
+              <span class="versus__score num" id="team2ProbResult">—</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="prob-bar" role="img" id="probBar" aria-label="Win probability split">
+              <span class="prob-bar__a" id="probBarA" style="width: 50%;"></span>
+              <span class="prob-bar__b" id="probBarB" style="width: 50%;"></span>
+            </div>
+          </div>
+
+          <div class="note note--info" id="overallInsightResult">
+            {{ icon('info') }}<span>Insight will appear here.</span>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <h4 class="field__label" id="team1FactorsTitle" style="margin-bottom: var(--s-3);">Team A factors</h4>
+              <ul class="stack stack-3" id="team1FactorsList" style="list-style: none; padding: 0; margin: 0; color: var(--muted); font-size: var(--t-sm);"></ul>
+            </div>
+            <div>
+              <h4 class="field__label" id="team2FactorsTitle" style="margin-bottom: var(--s-3);">Team B factors</h4>
+              <ul class="stack stack-3" id="team2FactorsList" style="list-style: none; padding: 0; margin: 0; color: var(--muted); font-size: var(--t-sm);"></ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="forecast-heading" data-reveal="2">
+  <div class="section__head">
+    <h2 class="section__title" id="forecast-heading">{{ icon('gauge') }} Player form forecaster</h2>
+  </div>
+
+  <div class="split-sticky">
+    <form class="panel" id="forecasterForm" novalidate>
+      <div class="panel__head">
+        <h3 class="panel__title">{{ icon('user') }} Choose a batter</h3>
+      </div>
+      <div class="panel__body">
+        <div class="field" data-field="player">
+          <label class="field__label" for="playerSelect">Player <span class="field__req" aria-hidden="true">*</span></label>
+          <select class="select" id="playerSelect" name="player_id" required>
+            <option value="">Select a player</option>
+            {% for player in players %}
+              <option value="{{ player.id }}">{{ player.name }}{% if player.team %} — {{ player.team.short_name }}{% endif %}</option>
+            {% endfor %}
+          </select>
+          <p class="field__help">Projection uses the player's most recent scoring innings.</p>
+          <p class="field__error" data-error>{{ icon('alert-circle') }}<span>Pick a player.</span></p>
+        </div>
+      </div>
+      <div class="panel__foot">
+        <button type="submit" class="btn btn--primary btn--block" id="forecastBtn">
+          <span class="btn__spinner" aria-hidden="true"></span>
+          {{ icon('gauge') }} Project next innings
+        </button>
+      </div>
+    </form>
+
+    <div>
+      <div class="empty" id="forecastPlaceholder">
+        <span class="empty__icon">{{ icon('gauge') }}</span>
+        <h3>No projection yet</h3>
+        <p>Pick a player to project how many runs they are likely to score in their next innings, based on recent form.</p>
+      </div>
+
+      <div class="panel is-hidden" id="forecastResultsCard" aria-live="polite">
+        <div class="panel__head">
+          <h3 class="panel__title">{{ icon('target') }} Projected output</h3>
+          <span class="section__count" id="forecastPlayerName">—</span>
+        </div>
+        <div class="panel__body stack stack-6">
+          <div>
+            <span class="metric__label">Projected runs, next innings</span>
+            <span class="metric__value" id="predictedRuns" style="font-size: var(--t-display); line-height: 1;">—</span>
+          </div>
+
+          <dl class="def-list">
+            <div class="def-row">
+              <dt>Last three innings<br><span class="field__help">most recent first</span></dt>
+              <dd class="num" id="recentForm">—</dd>
+            </div>
+            <div class="def-row">
+              <dt>Confidence</dt>
+              <dd id="confidenceResult">—</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+<script src="{{ url_for('static', filename='js/predictions.js') }}" defer></script>
+{% endblock %}

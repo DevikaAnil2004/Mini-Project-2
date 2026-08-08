@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Selection Assistant — CricketIQ{% endblock %}
+{% block meta_description %}Generate a suggested playing XI for any IPL matchup, balanced across batting, bowling and all-round roles.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">Selection Assistant</li>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div class="page-header__row">
+    <div>
+      <p class="eyebrow">Intelligence</p>
+      <h1>Selection Assistant</h1>
+      <p class="lede">Pick your side and an opponent to get a suggested XI, balanced across roles.</p>
+    </div>
+  </div>
+</header>
+
+<div class="split-sticky" data-reveal="1">
+  <form class="panel" id="assistantForm" novalidate>
+    <div class="panel__head">
+      <h2 class="panel__title">{{ icon('clipboard-check') }} Plan the match</h2>
+    </div>
+    <div class="panel__body">
+      <div class="field" data-field="team">
+        <label class="field__label" for="teamSelect">Your team <span class="field__req" aria-hidden="true">*</span></label>
+        <select class="select" id="teamSelect" name="team_id" required>
+          <option value="">Select your team</option>
+          {% for team in teams %}
+            <option value="{{ team.id }}">{{ team.name }}</option>
+          {% endfor %}
+        </select>
+        <p class="field__error" data-error>{{ icon('alert-circle') }}<span>Pick your team.</span></p>
+      </div>
+
+      <div class="field" data-field="opponent">
+        <label class="field__label" for="oppSelect">Opponent <span class="field__req" aria-hidden="true">*</span></label>
+        <select class="select" id="oppSelect" name="opponent_id" required>
+          <option value="">Select the opposition</option>
+          {% for team in teams %}
+            <option value="{{ team.id }}">{{ team.name }}</option>
+          {% endfor %}
+        </select>
+        <p class="field__error" data-error>{{ icon('alert-circle') }}<span>Pick a different opponent.</span></p>
+      </div>
+    </div>
+    <div class="panel__foot">
+      <button type="submit" class="btn btn--primary btn--block" id="assistBtn">
+        <span class="btn__spinner" aria-hidden="true"></span>
+        {{ icon('sparkles') }} Suggest playing XI
+      </button>
+    </div>
+  </form>
+
+  <div>
+    <div class="empty" id="placeholderCard">
+      <span class="empty__icon">{{ icon('clipboard-check') }}</span>
+      <h3>No XI generated yet</h3>
+      <p>Choose your team and an opponent. The assistant picks eleven players and explains the balance it settled on.</p>
+    </div>
+
+    <div class="panel is-hidden" id="resultsCard" aria-live="polite">
+      <div class="panel__head">
+        <h2 class="panel__title">{{ icon('list') }} Suggested XI</h2>
+        <span class="section__count">11 players</span>
+      </div>
+      <div class="panel__body">
+        <div class="note note--pos" id="reasoningResult">
+          {{ icon('check-circle') }}<span>Reasoning will appear here.</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <caption class="visually-hidden">Suggested playing eleven</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="num">#</th>
+              <th scope="col">Player</th>
+              <th scope="col">Role</th>
+            </tr>
+          </thead>
+          <tbody id="xiList"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/intelligence.js') }}" defer></script>
+{% endblock %}

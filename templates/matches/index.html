@@ -1,159 +1,131 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_components.html" import pager, empty_state, filter_empty, table_search, status_badge %}
 
-{% block title %}Matches - CricketIQ{% endblock %}
+{% block title %}Matches — CricketIQ{% endblock %}
+{% block meta_description %}Every IPL fixture on record with scores, venues, result status and links to full scorecards.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">Matches</li>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <h1 class="mb-3">
-        <i class="fas fa-trophy"></i> IPL Matches
-    </h1>
-    <p class="text-muted">View all IPL matches and their detailed statistics.</p>
-</div>
-
-<!-- Filter Section -->
-<div class="mb-4">
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <form method="get" class="d-flex gap-2 align-items-end flex-wrap">
-                <div class="flex-grow-1">
-                    <label for="seasonFilter" class="form-label">Filter by Season</label>
-                    <select id="seasonFilter" name="season" class="form-select">
-                        <option value="">All Seasons</option>
-                        {% for season in seasons|sort(reverse=True) %}
-                            <option value="{{ season }}" {% if season|string == selected_season %}selected{% endif %}>IPL Season {{ season }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-filter"></i> Filter
-                </button>
-                <a href="{{ url_for('matches') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-redo"></i> Reset
-                </a>
-            </form>
-        </div>
+<header class="page-header">
+  <div class="page-header__row">
+    <div>
+      <p class="eyebrow">Directory</p>
+      <h1>Matches</h1>
+      <p class="lede">Fixtures newest first, with scores and links to full scorecards.</p>
     </div>
-</div>
+  </div>
+</header>
+
+<form method="get" class="filter-bar" data-reveal="1">
+  <div class="field">
+    <label class="field__label" for="seasonFilter">{{ icon('calendar', 'icon--sm') }} Season</label>
+    <select class="select" id="seasonFilter" name="season">
+      <option value="">All seasons</option>
+      {% for season in seasons|sort(reverse=True) %}
+        <option value="{{ season }}" {% if season|string == selected_season %}selected{% endif %}>Season {{ season }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {{ table_search('matches', 'Filter this page…', 'Filter the matches on this page by team or venue') }}
+
+  <div class="filter-bar__actions">
+    <button type="submit" class="btn btn--primary">{{ icon('filter', 'icon--sm') }} Apply</button>
+    {% if selected_season %}
+      <a class="btn btn--ghost" href="{{ url_for('matches') }}">{{ icon('reset', 'icon--sm') }} Reset</a>
+    {% endif %}
+  </div>
+</form>
 
 {% if matches %}
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>Date</th>
-                    <th>Match</th>
-                    <th>Venue</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for match in matches %}
-                    <tr>
-                        <td>
-                            <small>{{ match.match_date.strftime('%d %b %Y') }}</small>
-                            <br>
-                            <small class="text-muted">{{ match.match_date.strftime('%H:%M') }}</small>
-                        </td>
-                        <td>
-                            <strong>
-                                {% if match.home_team_obj %}
-                                    <a href="{{ url_for('team_detail', team_id=match.home_team_id) }}" class="text-decoration-none">
-                                        {{ match.home_team_obj.short_name }}
-                                    </a>
-                                {% endif %}
-                                vs
-                                {% if match.away_team_obj %}
-                                    <a href="{{ url_for('team_detail', team_id=match.away_team_id) }}" class="text-decoration-none">
-                                        {{ match.away_team_obj.short_name }}
-                                    </a>
-                                {% endif %}
-                            </strong>
-                            <br>
-                            <small class="text-muted">Season {{ match.season }}</small>
-                        </td>
-                        <td>
-                            <small>{{ match.venue|default('TBD') }}</small>
-                        </td>
-                        <td>
-                            {% if match.status == 'completed' %}
-                                {% if match.home_team_score and match.away_team_score %}
-                                    <strong>{{ match.home_team_score }} - {{ match.away_team_score }}</strong>
-                                    {% if match.winner_id %}
-                                        <br>
-                                        <small class="text-success">
-                                            {% if match.winner_id == match.home_team_id %}
-                                                Winner: {{ match.home_team_obj.short_name }}
-                                            {% else %}
-                                                Winner: {{ match.away_team_obj.short_name }}
-                                            {% endif %}
-                                        </small>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if match.status == 'completed' %}
-                                <span class="badge bg-success">{{ match.status }}</span>
-                            {% elif match.status == 'live' %}
-                                <span class="badge bg-danger">{{ match.status }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ match.status }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{{ url_for('match_detail', match_id=match.id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye"></i> Details
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <section class="section" aria-label="Match results" data-reveal="2">
+    <div class="section__head">
+      <h2 class="section__title">{{ icon('list') }} Fixtures</h2>
+      <span class="section__count">
+        {% if pagination %}
+          {{ pagination.total }} match{{ '' if pagination.total == 1 else 'es' }}{% if selected_season %} · season {{ selected_season }}{% endif %}
+        {% else %}
+          {{ matches|length }} shown
+        {% endif %}
+      </span>
     </div>
 
-    <!-- Pagination -->
-    {% if pagination and pagination.pages > 1 %}
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if pagination.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('matches', page=pagination.prev_num, season=selected_season) }}">Previous</a>
-                    </li>
-                {% endif %}
-
-                {% for page_num in pagination.iter_pages() %}
-                    {% if page_num %}
-                        {% if page_num == pagination.page %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ page_num }}</span>
-                            </li>
-                        {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('matches', page=page_num, season=selected_season) }}">{{ page_num }}</a>
-                            </li>
-                        {% endif %}
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
+    <div class="panel">
+      <p class="table-scroll-hint">Scroll sideways to see every column.</p>
+      <div class="table-wrap">
+        <table class="data-table" data-sortable>
+          <caption class="visually-hidden">IPL matches{% if selected_season %}, season {{ selected_season }}{% endif %}</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-sort="text">Date</th>
+              <th scope="col">Matchup</th>
+              <th scope="col">Venue</th>
+              <th scope="col" class="num">Score</th>
+              <th scope="col" data-sort="text">Status</th>
+              <th scope="col" class="num">Scorecard</th>
+            </tr>
+          </thead>
+          <tbody data-filter-target="matches">
+            {% for match in matches %}
+              <tr data-filter-text="{{ match.home_team_obj.short_name if match.home_team_obj else '' }} {{ match.away_team_obj.short_name if match.away_team_obj else '' }} {{ match.venue or '' }} {{ match.season }}">
+                <td>
+                  <span class="num primary-cell">{{ match.match_date.strftime('%d %b %Y') }}</span>
+                  <span class="num" style="display: block; color: var(--faint); font-size: var(--t-xs);">{{ match.match_date.strftime('%H:%M') }}</span>
+                </td>
+                <td>
+                  <span class="primary-cell">
+                    {% if match.home_team_obj %}
+                      <a href="{{ url_for('team_detail', team_id=match.home_team_id) }}">{{ match.home_team_obj.short_name }}</a>
+                    {% else %}—{% endif %}
+                    <span style="color: var(--faint); font-weight: 400;">vs</span>
+                    {% if match.away_team_obj %}
+                      <a href="{{ url_for('team_detail', team_id=match.away_team_id) }}">{{ match.away_team_obj.short_name }}</a>
+                    {% else %}—{% endif %}
+                  </span>
+                  <span style="display: block; color: var(--faint); font-size: var(--t-xs);">Season {{ match.season }}</span>
+                </td>
+                <td style="color: var(--muted);">{{ match.venue or 'Not recorded' }}</td>
+                <td class="num">
+                  {% if match.home_team_score is not none and match.away_team_score is not none %}
+                    <span class="primary-cell">{{ match.home_team_score }}&ndash;{{ match.away_team_score }}</span>
+                    {% if match.winner_id %}
+                      <span style="display: block; color: var(--pos-fg); font-size: var(--t-xs); font-weight: 550;">
+                        {{ match.home_team_obj.short_name if match.winner_id == match.home_team_id else match.away_team_obj.short_name }} won
+                      </span>
                     {% endif %}
-                {% endfor %}
-
-                {% if pagination.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('matches', page=pagination.next_num, season=selected_season) }}">Next</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
-{% else %}
-    <div class="alert alert-info" role="alert">
-        <i class="fas fa-info-circle"></i> No matches available. Please add match data first.
+                  {% else %}
+                    <span style="color: var(--faint);">—</span>
+                  {% endif %}
+                </td>
+                <td>{{ status_badge(match.status) }}</td>
+                <td class="num">
+                  <a class="btn btn--sm btn--outline" href="{{ url_for('match_detail', match_id=match.id) }}">
+                    {{ icon('eye', 'icon--sm') }} Open<span class="visually-hidden"> match {{ match.id }}</span>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    {{ filter_empty('matches', 'matches') }}
+
+    {{ pager(pagination, 'matches', {'season': selected_season} if selected_season else {}) }}
+  </section>
+{% elif selected_season %}
+  {{ empty_state('search', 'No matches in season ' ~ selected_season,
+                 'That season has no fixtures on record. Try another season or clear the filter.',
+                 url_for('matches'), 'Clear filter', 'reset') }}
+{% else %}
+  {{ empty_state('trophy', 'No matches on record',
+                 'The matches table is empty. Load fixture data and this list will populate automatically.',
+                 url_for('index'), 'Back to overview', 'home') }}
 {% endif %}
 {% endblock %}

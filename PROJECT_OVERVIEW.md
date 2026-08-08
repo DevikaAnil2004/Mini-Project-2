@@ -19,10 +19,12 @@ CricketIQ is an all-in-one analytics platform for cricket enthusiasts, statistic
 - **Database Migrations**: Flask-Migrate
 
 ### Frontend
-- **CSS Framework**: Bootstrap 5.3.0
-- **Markup**: HTML5 with Jinja2 templating
-- **Styling**: Custom CSS with modern design patterns
-- **Interactivity**: Vanilla JavaScript
+- **CSS**: Custom OKLCH design-token system (`static/css/style.css`) layered on Bootstrap 5 for grid and reset
+- **Markup**: HTML5 with Jinja2 templating; shared macros in `templates/_icons.html` and `templates/_components.html`
+- **Icons**: Inline SVG symbol sprite, one stroke weight, no webfont
+- **Charts**: Chart.js, themed from the CSS tokens and loaded per page
+- **Interactivity**: Vanilla JavaScript (theme, drawer, toasts, table filter and sort)
+- **Design system**: documented in `DESIGN.md`
 
 ### Development Tools
 - **Package Manager**: pip (Python)

@@ -1,162 +1,180 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
-{% block title %}Home - CricketIQ{% endblock %}
+{% block title %}CricketIQ — IPL Analytics{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<div class="hero-section bg-gradient-dark text-white py-5 mb-5 rounded">
-    <div class="container-fluid">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-4">
-                    <i class="fas fa-cricket"></i> CricketIQ
-                </h1>
-                <p class="lead mb-4">
-                    Your comprehensive IPL Analytics Platform for detailed match statistics, player performance, and team insights.
-                </p>
-                <div class="d-flex gap-3">
-                    <a href="{{ url_for('teams') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-users"></i> Explore Teams
-                    </a>
-                    <a href="{{ url_for('matches') }}" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-trophy"></i> View Matches
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-6 text-center d-none d-lg-block">
-                <i class="fas fa-chart-bar" style="font-size: 120px; opacity: 0.2;"></i>
-            </div>
-        </div>
+<section class="hero" data-reveal="1">
+  <div class="hero__grid">
+    <div class="hero__inner">
+      <p class="eyebrow">Indian Premier League</p>
+      <h1 class="display-xl">Every team, every player,<br>every number that matters.</h1>
+      <p class="lede">
+        Browse the full IPL record, then push it through prediction, selection and
+        similarity models to see what the raw table alone will not tell you.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--primary btn--lg" href="{{ url_for('analytics') }}">
+          {{ icon('bar-chart') }} Open analytics
+        </a>
+        <a class="btn btn--outline btn--lg" href="{{ url_for('predictions') }}">
+          {{ icon('sparkles') }} Run a prediction
+        </a>
+      </div>
     </div>
-</div>
 
-<!-- Statistics Cards -->
-<div class="row mb-5">
-    <div class="col-md-4 mb-3 mb-md-0">
-        <div class="card stats-card shadow-sm">
-            <div class="card-body text-center">
-                <i class="fas fa-building text-primary" style="font-size: 40px;"></i>
-                <h3 class="mt-3 mb-2">{{ stats.total_teams|default(0) }}</h3>
-                <p class="text-muted">Teams</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3 mb-md-0">
-        <div class="card stats-card shadow-sm">
-            <div class="card-body text-center">
-                <i class="fas fa-users text-success" style="font-size: 40px;"></i>
-                <h3 class="mt-3 mb-2">{{ stats.total_players|default(0) }}</h3>
-                <p class="text-muted">Players</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card stats-card shadow-sm">
-            <div class="card-body text-center">
-                <i class="fas fa-trophy text-warning" style="font-size: 40px;"></i>
-                <h3 class="mt-3 mb-2">{{ stats.total_matches|default(0) }}</h3>
-                <p class="text-muted">Matches</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Latest Matches Section -->
-<div class="mb-5">
-    <h2 class="mb-4">
-        <i class="fas fa-clock"></i> Latest Matches
-    </h2>
-    
     {% if latest_matches %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Date</th>
-                        <th>Match</th>
-                        <th>Venue</th>
-                        <th>Result</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for match in latest_matches %}
-                        <tr>
-                            <td>{{ match.match_date.strftime('%d %b %Y') }}</td>
-                            <td>
-                                <strong>
-                                    {% if match.home_team_obj %}
-                                        {{ match.home_team_obj.short_name }}
-                                    {% endif %}
-                                    vs
-                                    {% if match.away_team_obj %}
-                                        {{ match.away_team_obj.short_name }}
-                                    {% endif %}
-                                </strong>
-                            </td>
-                            <td>{{ match.venue|default('N/A') }}</td>
-                            <td>
-                                {% if match.status == 'completed' %}
-                                    <span class="badge bg-success">{{ match.status }}</span>
-                                {% elif match.status == 'live' %}
-                                    <span class="badge bg-danger">{{ match.status }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ match.status }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('match_detail', match_id=match.id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i> Details
-                                </a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+      {# Prefer a played match — a card of two em-dashes tells the reader nothing. #}
+      {% set played = latest_matches|selectattr('status', 'equalto', 'completed')|list %}
+      {% set feature = played[0] if played else latest_matches[0] %}
+      <a class="spotlight" href="{{ url_for('match_detail', match_id=feature.id) }}">
+        <span class="spotlight__label">
+          {{ icon('circle-dot', 'icon--sm') }} {{ 'Latest result' if played else 'Next fixture' }}
+        </span>
+
+        <div class="spotlight__teams">
+          <span class="spotlight__team">
+            <span class="monogram monogram--accent">{{ feature.home_team_obj.short_name if feature.home_team_obj else '—' }}</span>
+            <span class="spotlight__abbr">{{ feature.home_team_obj.short_name if feature.home_team_obj else 'TBD' }}</span>
+            <span class="spotlight__runs">{{ feature.home_team_score if feature.home_team_score is not none else '—' }}</span>
+          </span>
+          <span class="versus__mark" aria-hidden="true">VS</span>
+          <span class="spotlight__team">
+            <span class="monogram">{{ feature.away_team_obj.short_name if feature.away_team_obj else '—' }}</span>
+            <span class="spotlight__abbr">{{ feature.away_team_obj.short_name if feature.away_team_obj else 'TBD' }}</span>
+            <span class="spotlight__runs">{{ feature.away_team_score if feature.away_team_score is not none else '—' }}</span>
+          </span>
         </div>
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            <i class="fas fa-info-circle"></i> No matches available yet. Please add match data.
-        </div>
+
+        <span class="spotlight__meta">
+          <span>{{ feature.match_date.strftime('%d %b %Y') }} · {{ feature.venue or 'Venue not recorded' }}</span>
+          <span class="feature__cta">View scorecard {{ icon('arrow-right') }}</span>
+        </span>
+      </a>
     {% endif %}
-</div>
+  </div>
+</section>
 
-<!-- Features Section -->
-<div class="row mb-5">
-    <div class="col-md-6 mb-3 mb-md-0">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="fas fa-chart-line text-primary"></i> Analytics & Insights
-                </h5>
-                <p class="card-text">
-                    Get detailed statistics on team performance, player metrics, and match outcomes. Track trends and patterns across IPL seasons.
-                </p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="fas fa-database text-success"></i> Comprehensive Database
-                </h5>
-                <p class="card-text">
-                    Access complete information about teams, players, matches, and detailed statistics. Search and filter data easily.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
+<section class="section" aria-labelledby="db-heading" data-reveal="2">
+  <div class="section__head">
+    <h2 class="section__title" id="db-heading">{{ icon('database') }} Database at a glance</h2>
+  </div>
 
-<!-- CTA Section -->
-<div class="bg-light p-4 rounded mb-5">
-    <h3>Ready to dive into the world of cricket analytics?</h3>
-    <p class="text-muted">Start exploring teams, players, and match statistics to gain deeper insights into IPL performance.</p>
-    <div class="d-flex gap-2">
-        <a href="{{ url_for('teams') }}" class="btn btn-primary">View All Teams</a>
-        <a href="{{ url_for('players') }}" class="btn btn-outline-primary">Browse Players</a>
-        <a href="{{ url_for('matches') }}" class="btn btn-outline-success">Check Matches</a>
+  <div class="stat-grid">
+    <article class="stat-tile" style="--tile-accent: var(--series-1);">
+      <p class="stat-tile__head">{{ icon('shield') }} Teams</p>
+      <p class="stat-tile__value">{{ stats.total_teams|default(0) }}</p>
+      <p class="stat-tile__note">Franchises on record</p>
+    </article>
+    <article class="stat-tile" style="--tile-accent: var(--series-2);">
+      <p class="stat-tile__head">{{ icon('users') }} Players</p>
+      <p class="stat-tile__value">{{ stats.total_players|default(0) }}</p>
+      <p class="stat-tile__note">Active squad members</p>
+    </article>
+    <article class="stat-tile" style="--tile-accent: var(--series-4);">
+      <p class="stat-tile__head">{{ icon('trophy') }} Matches</p>
+      <p class="stat-tile__value">{{ stats.total_matches|default(0) }}</p>
+      <p class="stat-tile__note">{{ stats.completed_matches|default(0) }} completed</p>
+    </article>
+    <article class="stat-tile" style="--tile-accent: var(--series-3);">
+      <p class="stat-tile__head">{{ icon('calendar') }} Seasons</p>
+      <p class="stat-tile__value">{{ stats.total_seasons|default(0) }}</p>
+      <p class="stat-tile__note">Covered by season tables</p>
+    </article>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="modules-heading" data-reveal="3">
+  <div class="section__head">
+    <h2 class="section__title" id="modules-heading">{{ icon('layers') }} Where to start</h2>
+  </div>
+
+  <div class="feature-grid">
+    <a class="feature" href="{{ url_for('teams') }}">
+      <span class="feature__icon">{{ icon('database') }}</span>
+      <h3>Directory</h3>
+      <p>Teams, squads, match records and season tables — the underlying data, unfiltered.</p>
+      <span class="feature__cta">Browse the directory {{ icon('arrow-right') }}</span>
+    </a>
+
+    <a class="feature" href="{{ url_for('analytics') }}">
+      <span class="feature__icon">{{ icon('pie-chart') }}</span>
+      <h3>Analytics</h3>
+      <p>Season-by-season win trends and leaderboards, charted so shifts in form are visible at a glance.</p>
+      <span class="feature__cta">View dashboards {{ icon('arrow-right') }}</span>
+    </a>
+
+    <a class="feature" href="{{ url_for('predictions') }}">
+      <span class="feature__icon">{{ icon('sparkles') }}</span>
+      <h3>Intelligence</h3>
+      <p>Matchup probabilities, projected player output, suggested XIs and statistical look-alikes.</p>
+      <span class="feature__cta">Open the model lab {{ icon('arrow-right') }}</span>
+    </a>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="recent-heading" data-reveal="4">
+  <div class="section__head">
+    <h2 class="section__title" id="recent-heading">{{ icon('clock') }} Recent matches</h2>
+    <a class="btn btn--sm btn--outline" href="{{ url_for('matches') }}">
+      All matches {{ icon('arrow-right') }}
+    </a>
+  </div>
+
+  {% if latest_matches %}
+    <div class="panel">
+      <p class="table-scroll-hint">Scroll sideways to see every column.</p>
+      <div class="table-wrap">
+        <table class="data-table">
+          <caption class="visually-hidden">The five most recent matches on record</caption>
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Matchup</th>
+              <th scope="col">Venue</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="num">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for match in latest_matches %}
+              <tr>
+                <td class="mono" style="color: var(--muted);">{{ match.match_date.strftime('%d %b %Y') }}</td>
+                <td>
+                  <span class="primary-cell">
+                    {{ match.home_team_obj.short_name if match.home_team_obj else '—' }}
+                    <span style="color: var(--faint); font-weight: 400;">vs</span>
+                    {{ match.away_team_obj.short_name if match.away_team_obj else '—' }}
+                  </span>
+                </td>
+                <td style="color: var(--muted);">{{ match.venue or 'Not recorded' }}</td>
+                <td>
+                  {% if match.status == 'completed' %}
+                    <span class="badge-pill badge-pill--pos">Final</span>
+                  {% elif match.status == 'live' %}
+                    <span class="badge-pill badge-pill--neg badge-pill--live">Live</span>
+                  {% else %}
+                    <span class="badge-pill">Scheduled</span>
+                  {% endif %}
+                </td>
+                <td class="num">
+                  <a class="btn btn--sm btn--outline" href="{{ url_for('match_detail', match_id=match.id) }}">
+                    Open <span class="visually-hidden">match {{ match.id }}</span>{{ icon('chevron-right') }}
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-</div>
+  {% else %}
+    <div class="empty">
+      <span class="empty__icon">{{ icon('inbox') }}</span>
+      <h3>No matches on record yet</h3>
+      <p>Once match data is loaded, the most recent fixtures will appear here with scores and links to full scorecards.</p>
+      <a class="btn btn--outline" href="{{ url_for('teams') }}">{{ icon('shield') }} Browse teams instead</a>
+    </div>
+  {% endif %}
+</section>
 {% endblock %}

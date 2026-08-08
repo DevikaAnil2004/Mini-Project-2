@@ -1,0 +1,98 @@
+{% from "_icons.html" import icon %}
+
+{#
+  Pagination. `args` carries any filter state that must survive a page change
+  (role, season, ...) so filters are never silently dropped on navigation.
+#}
+{%- macro pager(pagination, endpoint, args={}) -%}
+  {% if pagination and pagination.pages > 1 %}
+    <nav aria-label="Pagination">
+      <ul class="pager">
+        <li>
+          {% if pagination.has_prev %}
+            <a class="pager__link" href="{{ url_for(endpoint, page=pagination.prev_num, **args) }}" rel="prev">
+              {{ icon('chevron-left', 'icon--sm') }}<span>Prev</span>
+            </a>
+          {% else %}
+            <span class="pager__link" aria-disabled="true">{{ icon('chevron-left', 'icon--sm') }}<span>Prev</span></span>
+          {% endif %}
+        </li>
+
+        {% for page_num in pagination.iter_pages(left_edge=1, left_current=1, right_current=2, right_edge=1) %}
+          <li>
+            {% if page_num %}
+              {% if page_num == pagination.page %}
+                <span class="pager__link" aria-current="page">{{ page_num }}</span>
+              {% else %}
+                <a class="pager__link" href="{{ url_for(endpoint, page=page_num, **args) }}">{{ page_num }}</a>
+              {% endif %}
+            {% else %}
+              <span class="pager__gap" aria-hidden="true">&hellip;</span>
+            {% endif %}
+          </li>
+        {% endfor %}
+
+        <li>
+          {% if pagination.has_next %}
+            <a class="pager__link" href="{{ url_for(endpoint, page=pagination.next_num, **args) }}" rel="next">
+              <span>Next</span>{{ icon('chevron-right', 'icon--sm') }}
+            </a>
+          {% else %}
+            <span class="pager__link" aria-disabled="true"><span>Next</span>{{ icon('chevron-right', 'icon--sm') }}</span>
+          {% endif %}
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro empty_state(icon_name, heading, body, cta_href=None, cta_label=None, cta_icon='arrow-right', inline=False) -%}
+  <div class="empty{% if inline %} empty--inline{% endif %}">
+    <span class="empty__icon">{{ icon(icon_name) }}</span>
+    <h3>{{ heading }}</h3>
+    <p>{{ body }}</p>
+    {% if cta_href and cta_label %}
+      <a class="btn btn--outline" href="{{ cta_href }}">{{ icon(cta_icon) }} {{ cta_label }}</a>
+    {% endif %}
+  </div>
+{%- endmacro -%}
+
+{#
+  Player role badge. Colour is paired with the role text itself, never used
+  as the only carrier of meaning.
+#}
+{%- macro role_badge(role) -%}
+  {% set tone = {'Batsman': 'accent', 'Bowler': 'info', 'All-rounder': 'pos', 'Wicket-keeper': 'warn'}.get(role, '') %}
+  <span class="badge-pill{% if tone %} badge-pill--{{ tone }}{% endif %}">{{ role or 'Unassigned' }}</span>
+{%- endmacro -%}
+
+{%- macro status_badge(status) -%}
+  {% if status == 'completed' %}
+    <span class="badge-pill badge-pill--pos">Final</span>
+  {% elif status == 'live' %}
+    <span class="badge-pill badge-pill--neg badge-pill--live">Live</span>
+  {% elif status == 'cancelled' %}
+    <span class="badge-pill badge-pill--warn">Cancelled</span>
+  {% else %}
+    <span class="badge-pill">Scheduled</span>
+  {% endif %}
+{%- endmacro -%}
+
+{#- Shown by the filter script only when a live filter hides every row. -#}
+{%- macro filter_empty(target, noun) -%}
+  <div class="empty empty--inline" data-filter-empty="{{ target }}" hidden>
+    <span class="empty__icon">{{ icon('search') }}</span>
+    <h3>No {{ noun }} match that filter</h3>
+    <p>Clear the search box to see the full list again.</p>
+  </div>
+{%- endmacro -%}
+
+{#- Live client-side filter for a table or grid. Filters rows already on the page. -#}
+{%- macro table_search(target, placeholder, label) -%}
+  <div class="search-field">
+    <label class="visually-hidden" for="filter-{{ target }}">{{ label }}</label>
+    {{ icon('search') }}
+    <input class="input" id="filter-{{ target }}" type="search" autocomplete="off"
+           placeholder="{{ placeholder }}" data-filter-input="{{ target }}">
+  </div>
+{%- endmacro -%}

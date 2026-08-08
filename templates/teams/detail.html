@@ -1,159 +1,166 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_components.html" import empty_state, filter_empty, table_search, role_badge %}
 
-{% block title %}{{ team.name }} - CricketIQ{% endblock %}
+{% block title %}{{ team.name }} — CricketIQ{% endblock %}
+{% block meta_description %}{{ team.name }} ({{ team.short_name }}) — squad list, season record and franchise details.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li><a href="{{ url_for('teams') }}">Teams</a></li>
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">{{ team.short_name }}</li>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <a href="{{ url_for('teams') }}" class="btn btn-outline-secondary btn-sm mb-3">
-        <i class="fas fa-arrow-left"></i> Back to Teams
-    </a>
-    <h1 class="mb-2">{{ team.name }}</h1>
-    <p class="text-muted">{{ team.short_name }} | {{ team.city }}</p>
-</div>
+<header class="page-header">
+  <a class="btn btn--sm btn--ghost" href="{{ url_for('teams') }}" style="margin-bottom: var(--s-5);">
+    {{ icon('arrow-left') }} All teams
+  </a>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Team Information</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <strong>Team Name:</strong>
-                    <p>{{ team.name }}</p>
-                </div>
-                <div class="mb-3">
-                    <strong>Short Name:</strong>
-                    <p>{{ team.short_name }}</p>
-                </div>
-                <div class="mb-3">
-                    <strong>City:</strong>
-                    <p>{{ team.city }}</p>
-                </div>
-                {% if team.home_ground %}
-                    <div class="mb-3">
-                        <strong>Home Ground:</strong>
-                        <p>{{ team.home_ground }}</p>
-                    </div>
-                {% endif %}
-                {% if team.founded_year %}
-                    <div class="mb-3">
-                        <strong>Founded:</strong>
-                        <p>{{ team.founded_year }}</p>
-                    </div>
-                {% endif %}
-                {% if team.owner %}
-                    <div class="mb-3">
-                        <strong>Owner:</strong>
-                        <p>{{ team.owner }}</p>
-                    </div>
-                {% endif %}
-                {% if team.coach %}
-                    <div class="mb-3">
-                        <strong>Coach:</strong>
-                        <p>{{ team.coach }}</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+  <div class="page-header__row">
+    <div class="cluster" style="gap: var(--s-5); flex-wrap: nowrap;">
+      <span class="monogram monogram--accent monogram--lg" aria-hidden="true">{{ team.short_name }}</span>
+      <div style="min-width: 0;">
+        <p class="eyebrow">{{ team.city }}</p>
+        <h1>{{ team.name }}</h1>
+      </div>
+    </div>
+    <div class="page-header__actions">
+      <span class="badge-pill badge-pill--none">{{ icon('users', 'icon--sm') }} {{ players|length }} in squad</span>
+      {% if team.founded_year %}
+        <span class="badge-pill badge-pill--none">{{ icon('calendar', 'icon--sm') }} Since {{ team.founded_year }}</span>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+{% if stats %}
+  <section aria-labelledby="season-heading" data-reveal="1">
+    <div class="section__head">
+      <h2 class="section__title" id="season-heading">
+        {{ icon('bar-chart') }} Season {{ stats.season }} record
+      </h2>
+      <span class="section__count">Most recent season on file</span>
     </div>
 
-    <div class="col-md-6">
-        {% if stats %}
-            <div class="card shadow-sm mb-3">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Season Statistics ({{ stats.season }})</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <strong>Matches Played:</strong>
-                        <p class="h5">{{ stats.matches_played }}</p>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <strong>Wins:</strong>
-                            <p class="h5 text-success">{{ stats.wins }}</p>
-                        </div>
-                        <div class="col-6">
-                            <strong>Losses:</strong>
-                            <p class="h5 text-danger">{{ stats.losses }}</p>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <strong>Points:</strong>
-                        <p class="h5">{{ stats.points }}</p>
-                    </div>
-                    {% if stats.position %}
-                        <div class="mb-3">
-                            <strong>Table Position:</strong>
-                            <p class="h5">
-                                <span class="badge bg-primary">{{ stats.position }}</span>
-                            </p>
-                        </div>
-                    {% endif %}
-                    {% if stats.run_rate %}
-                        <div class="mb-3">
-                            <strong>Run Rate:</strong>
-                            <p class="h5">{{ stats.run_rate|round(2) }}</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
+    <div class="stat-grid">
+      <article class="stat-tile" style="--tile-accent: var(--series-2);">
+        <p class="stat-tile__head">{{ icon('trophy') }} Played</p>
+        <p class="stat-tile__value">{{ stats.matches_played }}</p>
+      </article>
+      <article class="stat-tile" style="--tile-accent: var(--pos);">
+        <p class="stat-tile__head">{{ icon('check-circle') }} Won</p>
+        <p class="stat-tile__value">{{ stats.wins }}</p>
+        <p class="stat-tile__note">
+          {% if stats.matches_played %}{{ ((stats.wins / stats.matches_played) * 100)|round(0)|int }}% win rate{% else %}No matches played{% endif %}
+        </p>
+      </article>
+      <article class="stat-tile" style="--tile-accent: var(--neg);">
+        <p class="stat-tile__head">{{ icon('alert-circle') }} Lost</p>
+        <p class="stat-tile__value">{{ stats.losses }}</p>
+      </article>
+      <article class="stat-tile" style="--tile-accent: var(--series-1);">
+        <p class="stat-tile__head">{{ icon('target') }} Points</p>
+        <p class="stat-tile__value">{{ stats.points }}</p>
+        <p class="stat-tile__note">
+          {% if stats.position %}
+            {% set pos = stats.position %}
+            {% set suffix = 'th' if 11 <= pos % 100 <= 13 else {1: 'st', 2: 'nd', 3: 'rd'}.get(pos % 10, 'th') %}
+            Finished {{ pos }}{{ suffix }} on the table
+          {% else %}
+            Table position not recorded
+          {% endif %}
+        </p>
+      </article>
+      {% if stats.run_rate is not none %}
+        <article class="stat-tile" style="--tile-accent: var(--series-3);">
+          <p class="stat-tile__head">{{ icon('trending-up') }} Run rate</p>
+          <p class="stat-tile__value">{{ stats.run_rate|round(2) }}</p>
+        </article>
+      {% endif %}
     </div>
-</div>
+  </section>
+{% endif %}
 
-<!-- Players Section -->
-<div class="mb-4">
-    <h3 class="mb-3">
-        <i class="fas fa-users"></i> Team Players ({{ players|length }})
-    </h3>
-    
-    {% if players %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Jersey #</th>
-                        <th>Player Name</th>
-                        <th>Role</th>
-                        <th>Batting Style</th>
-                        <th>Bowling Style</th>
-                        <th>Country</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for player in players %}
-                        <tr>
-                            <td>
-                                {% if player.jersey_number %}
-                                    <strong>#{{ player.jersey_number }}</strong>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ player.name }}</td>
-                            <td>
-                                <span class="badge bg-info">{{ player.role }}</span>
-                            </td>
-                            <td>{{ player.batting_style|default('—') }}</td>
-                            <td>{{ player.bowling_style|default('—') }}</td>
-                            <td>{{ player.country|default('—') }}</td>
-                            <td>
-                                <a href="{{ url_for('player_detail', player_id=player.id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="alert alert-warning" role="alert">
-            <i class="fas fa-exclamation-triangle"></i> No players assigned to this team.
-        </div>
-    {% endif %}
-</div>
+<section class="section" aria-labelledby="details-heading" data-reveal="2">
+  <div class="section__head">
+    <h2 class="section__title" id="details-heading">{{ icon('info') }} Franchise details</h2>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel__body">
+        <dl class="def-list">
+          <div class="def-row"><dt>Full name</dt><dd>{{ team.name }}</dd></div>
+          <div class="def-row"><dt>Abbreviation</dt><dd class="num">{{ team.short_name }}</dd></div>
+          <div class="def-row"><dt>City</dt><dd>{{ team.city }}</dd></div>
+          <div class="def-row"><dt>Home ground</dt><dd>{{ team.home_ground or 'Not recorded' }}</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__body">
+        <dl class="def-list">
+          <div class="def-row"><dt>Founded</dt><dd class="num">{{ team.founded_year or '—' }}</dd></div>
+          <div class="def-row"><dt>Owner</dt><dd>{{ team.owner or 'Not recorded' }}</dd></div>
+          <div class="def-row"><dt>Head coach</dt><dd>{{ team.coach or 'Not recorded' }}</dd></div>
+          <div class="def-row"><dt>Squad size</dt><dd class="num">{{ players|length }}</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="squad-heading" data-reveal="3">
+  <div class="section__head">
+    <h2 class="section__title" id="squad-heading">{{ icon('users') }} Squad</h2>
+    {% if players %}{{ table_search('squad', 'Filter squad…', 'Filter squad by player name or role') }}{% endif %}
+  </div>
+
+  {% if players %}
+    <div class="panel">
+      <p class="table-scroll-hint">Scroll sideways to see every column.</p>
+      <div class="table-wrap">
+        <table class="data-table" data-sortable>
+          <caption class="visually-hidden">{{ team.name }} squad list</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="num" data-sort="number">#</th>
+              <th scope="col" data-sort="text">Player</th>
+              <th scope="col" data-sort="text">Role</th>
+              <th scope="col">Batting</th>
+              <th scope="col">Bowling</th>
+              <th scope="col" data-sort="text">Country</th>
+              <th scope="col" class="num">Profile</th>
+            </tr>
+          </thead>
+          <tbody data-filter-target="squad">
+            {% for player in players %}
+              <tr data-filter-text="{{ player.name }} {{ player.role }} {{ player.country or '' }}">
+                <td class="num" style="color: var(--faint);">{{ player.jersey_number if player.jersey_number is not none else '—' }}</td>
+                <td><a href="{{ url_for('player_detail', player_id=player.id) }}">{{ player.name }}</a></td>
+                <td>{{ role_badge(player.role) }}</td>
+                <td style="color: var(--muted);">{{ player.batting_style or '—' }}</td>
+                <td style="color: var(--muted);">{{ player.bowling_style or '—' }}</td>
+                <td style="color: var(--muted);">{{ player.country or '—' }}</td>
+                <td class="num">
+                  <a class="btn btn--sm btn--outline" href="{{ url_for('player_detail', player_id=player.id) }}">
+                    {{ icon('eye', 'icon--sm') }} View<span class="visually-hidden"> {{ player.name }}</span>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {{ filter_empty('squad', 'players') }}
+  {% else %}
+    {{ empty_state('users', 'No players assigned',
+                   'This franchise has no active players in the database yet.',
+                   url_for('players'), 'Browse all players', 'users') }}
+  {% endif %}
+</section>
 {% endblock %}

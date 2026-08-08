@@ -1,126 +1,119 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_components.html" import pager, empty_state, filter_empty, table_search, role_badge %}
 
-{% block title %}Players - CricketIQ{% endblock %}
+{% block title %}Players — CricketIQ{% endblock %}
+{% block meta_description %}Search the IPL player database by role, team and country, with links to full career records.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">Players</li>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <h1 class="mb-3">
-        <i class="fas fa-user"></i> IPL Players
-    </h1>
-    <p class="text-muted">Browse detailed information about all IPL players.</p>
-</div>
-
-<!-- Filter Section -->
-<div class="mb-4">
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <form method="get" class="d-flex gap-2 align-items-end flex-wrap">
-                <div class="flex-grow-1">
-                    <label for="roleFilter" class="form-label">Filter by Role</label>
-                    <select id="roleFilter" name="role" class="form-select">
-                        <option value="">All Roles</option>
-                        {% for role in roles %}
-                            <option value="{{ role }}" {% if role == selected_role %}selected{% endif %}>{{ role }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-filter"></i> Filter
-                </button>
-                <a href="{{ url_for('players') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-redo"></i> Reset
-                </a>
-            </form>
-        </div>
+<header class="page-header">
+  <div class="page-header__row">
+    <div>
+      <p class="eyebrow">Directory</p>
+      <h1>Players</h1>
+      <p class="lede">Active squad members across every franchise, filterable by role.</p>
     </div>
-</div>
+  </div>
+</header>
+
+<form method="get" class="filter-bar" data-reveal="1">
+  <div class="field">
+    <label class="field__label" for="roleFilter">{{ icon('filter', 'icon--sm') }} Role</label>
+    <select class="select" id="roleFilter" name="role">
+      <option value="">All roles</option>
+      {% for role in roles %}
+        <option value="{{ role }}" {% if role == selected_role %}selected{% endif %}>{{ role }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {{ table_search('players', 'Filter this page…', 'Filter the players on this page by name, team or country') }}
+
+  <div class="filter-bar__actions">
+    <button type="submit" class="btn btn--primary">{{ icon('filter', 'icon--sm') }} Apply</button>
+    {% if selected_role %}
+      <a class="btn btn--ghost" href="{{ url_for('players') }}">{{ icon('reset', 'icon--sm') }} Reset</a>
+    {% endif %}
+  </div>
+</form>
 
 {% if players %}
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>Name</th>
-                    <th>Team</th>
-                    <th>Role</th>
-                    <th>Batting Style</th>
-                    <th>Bowling Style</th>
-                    <th>Country</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for player in players %}
-                    <tr>
-                        <td>
-                            <strong>{{ player.name }}</strong>
-                            {% if player.jersey_number %}
-                                <br><small class="text-muted">#{{ player.jersey_number }}</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if player.team %}
-                                <a href="{{ url_for('team_detail', team_id=player.team_id) }}" class="text-decoration-none">
-                                    {{ player.team.short_name }}
-                                </a>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="badge bg-info">{{ player.role }}</span>
-                        </td>
-                        <td>{{ player.batting_style|default('—') }}</td>
-                        <td>{{ player.bowling_style|default('—') }}</td>
-                        <td>{{ player.country|default('—') }}</td>
-                        <td>
-                            <a href="{{ url_for('player_detail', player_id=player.id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye"></i> Details
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
+  <section class="section" aria-label="Player results" data-reveal="2">
+    <div class="section__head">
+      <h2 class="section__title">{{ icon('list') }} Results</h2>
+      <span class="section__count">
+        {% if pagination %}
+          {{ pagination.total }} player{{ '' if pagination.total == 1 else 's' }}{% if selected_role %} · {{ selected_role }}{% endif %}
+        {% else %}
+          {{ players|length }} shown
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="panel">
+      <p class="table-scroll-hint">Scroll sideways to see every column.</p>
+      <div class="table-wrap">
+        <table class="data-table" data-sortable>
+          <caption class="visually-hidden">IPL players{% if selected_role %}, filtered to {{ selected_role }}{% endif %}</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-sort="text">Player</th>
+              <th scope="col" data-sort="text">Team</th>
+              <th scope="col" data-sort="text">Role</th>
+              <th scope="col">Batting</th>
+              <th scope="col">Bowling</th>
+              <th scope="col" data-sort="text">Country</th>
+              <th scope="col" class="num">Profile</th>
+            </tr>
+          </thead>
+          <tbody data-filter-target="players">
+            {% for player in players %}
+              <tr data-filter-text="{{ player.name }} {{ player.role }} {{ player.country or '' }} {{ player.team.short_name if player.team else '' }}">
+                <td>
+                  <a href="{{ url_for('player_detail', player_id=player.id) }}">{{ player.name }}</a>
+                  {% if player.jersey_number is not none %}
+                    <span class="num" style="color: var(--faint); font-size: var(--t-xs); display: block;">#{{ player.jersey_number }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if player.team %}
+                    <a href="{{ url_for('team_detail', team_id=player.team_id) }}">{{ player.team.short_name }}</a>
+                  {% else %}
+                    <span style="color: var(--faint);">—</span>
+                  {% endif %}
+                </td>
+                <td>{{ role_badge(player.role) }}</td>
+                <td style="color: var(--muted);">{{ player.batting_style or '—' }}</td>
+                <td style="color: var(--muted);">{{ player.bowling_style or '—' }}</td>
+                <td style="color: var(--muted);">{{ player.country or '—' }}</td>
+                <td class="num">
+                  <a class="btn btn--sm btn--outline" href="{{ url_for('player_detail', player_id=player.id) }}">
+                    {{ icon('eye', 'icon--sm') }} View<span class="visually-hidden"> {{ player.name }}</span>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
         </table>
+      </div>
     </div>
 
-    <!-- Pagination -->
-    {% if pagination and pagination.pages > 1 %}
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if pagination.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('players', page=pagination.prev_num, role=selected_role) }}">Previous</a>
-                    </li>
-                {% endif %}
+    {{ filter_empty('players', 'players') }}
 
-                {% for page_num in pagination.iter_pages() %}
-                    {% if page_num %}
-                        {% if page_num == pagination.page %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ page_num }}</span>
-                            </li>
-                        {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('players', page=page_num, role=selected_role) }}">{{ page_num }}</a>
-                            </li>
-                        {% endif %}
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
-                    {% endif %}
-                {% endfor %}
-
-                {% if pagination.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('players', page=pagination.next_num, role=selected_role) }}">Next</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
+    {{ pager(pagination, 'players', {'role': selected_role} if selected_role else {}) }}
+  </section>
+{% elif selected_role %}
+  {{ empty_state('search', 'No ' ~ selected_role ~ 's found',
+                 'No active players match this role. Try a different role or clear the filter.',
+                 url_for('players'), 'Clear filter', 'reset') }}
 {% else %}
-    <div class="alert alert-info" role="alert">
-        <i class="fas fa-info-circle"></i> No players available. Please add player data first.
-    </div>
+  {{ empty_state('users', 'No players on record',
+                 'The players table is empty. Load squad data and this directory will populate automatically.',
+                 url_for('index'), 'Back to overview', 'home') }}
 {% endif %}
 {% endblock %}

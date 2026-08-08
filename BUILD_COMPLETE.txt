@@ -30,7 +30,7 @@ ready to run locally on your machine.
   ✓ 10 HTML Templates        - Base + 9 content pages
   ✓ 1 CSS File (6.6 KB)      - Complete styling system
   ✓ 1 JavaScript File (5.6 KB) - Frontend utilities
-  ✓ Font Awesome Icons       - Via CDN
+  ✓ Inline SVG icon sprite   - templates/_icons.html (no webfont)
   ✓ Bootstrap 5 Framework    - Via CDN
 
 📚 DOCUMENTATION FILES (7 files):
@@ -198,7 +198,7 @@ FRONTEND:
   • HTML5              - Markup language
   • CSS3               - Styling
   • Vanilla JavaScript - Interactivity
-  • Font Awesome 6.4   - Icons (CDN)
+  • Inline SVG sprite  - Icons (no webfont request)
   • Jinja2             - Template engine
 
 DEVELOPMENT:

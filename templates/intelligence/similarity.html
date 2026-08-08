@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Player Similarity — CricketIQ{% endblock %}
+{% block meta_description %}Find IPL players whose statistical profile clusters closest to any chosen player.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">Player Similarity</li>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div class="page-header__row">
+    <div>
+      <p class="eyebrow">Intelligence</p>
+      <h1>Player Similarity</h1>
+      <p class="lede">Find the players whose statistical profile sits closest to a chosen player's.</p>
+    </div>
+  </div>
+</header>
+
+<div class="split-sticky" data-reveal="1">
+  <form class="panel" id="similarityForm" novalidate>
+    <div class="panel__head">
+      <h2 class="panel__title">{{ icon('search') }} Pick a player</h2>
+    </div>
+    <div class="panel__body">
+      <div class="field" data-field="player">
+        <label class="field__label" for="playerSelect">Target player <span class="field__req" aria-hidden="true">*</span></label>
+        <select class="select" id="playerSelect" name="player_id" required>
+          <option value="">Select a player</option>
+          {% for player in players %}
+            <option value="{{ player.id }}">{{ player.name }}{% if player.team %} — {{ player.team.short_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+        <p class="field__help">Clustering groups players by batting and bowling output, not by role label.</p>
+        <p class="field__error" data-error>{{ icon('alert-circle') }}<span>Pick a player.</span></p>
+      </div>
+    </div>
+    <div class="panel__foot">
+      <button type="submit" class="btn btn--primary btn--block" id="simBtn">
+        <span class="btn__spinner" aria-hidden="true"></span>
+        {{ icon('share') }} Find similar players
+      </button>
+    </div>
+  </form>
+
+  <div>
+    <div class="empty" id="placeholderCard">
+      <span class="empty__icon">{{ icon('share') }}</span>
+      <h3>No cluster selected</h3>
+      <p>Choose a player to see who else falls in their statistical cluster — often across different teams and stated roles.</p>
+    </div>
+
+    <div class="panel is-hidden" id="resultsCard" aria-live="polite">
+      <div class="panel__head">
+        <h2 class="panel__title">{{ icon('users') }} Closest profiles</h2>
+        <span class="badge-pill badge-pill--accent" id="clusterBadge">—</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <caption class="visually-hidden">Players in the same statistical cluster</caption>
+          <thead>
+            <tr>
+              <th scope="col">Player</th>
+              <th scope="col">Team</th>
+              <th scope="col">Role</th>
+            </tr>
+          </thead>
+          <tbody id="simList"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/intelligence.js') }}" defer></script>
+{% endblock %}

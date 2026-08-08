@@ -8,7 +8,9 @@ class Config:
     """Base configuration"""
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = True
+    # Echoing every statement to stdout costs a measurable amount of request
+    # time; opt in with SQLALCHEMY_ECHO=1 when debugging a query.
+    SQLALCHEMY_ECHO = os.getenv('SQLALCHEMY_ECHO', '').lower() in ('1', 'true', 'yes')
 
 
 class DevelopmentConfig(Config):
@@ -24,10 +26,7 @@ class DevelopmentConfig(Config):
     MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'cricketiq')
     
     # Build SQLAlchemy URI
-    if MYSQL_PASSWORD:
-        SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}'
-    else:
-        SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{MYSQL_USER}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///cricketiq.db'
 
 
 class ProductionConfig(Config):

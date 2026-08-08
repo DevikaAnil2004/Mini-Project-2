@@ -1,204 +1,205 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_components.html" import empty_state, role_badge %}
 
-{% block title %}{{ player.name }} - CricketIQ{% endblock %}
+{% set name_parts = player.name.split() %}
+{% set initials = (name_parts[0][0] ~ (name_parts[-1][0] if name_parts|length > 1 else ''))|upper %}
+
+{% block title %}{{ player.name }} — CricketIQ{% endblock %}
+{% block meta_description %}{{ player.name }} — role, playing style and match-by-match batting and bowling record.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li><a href="{{ url_for('players') }}">Players</a></li>
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">{{ player.name }}</li>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <a href="{{ url_for('players') }}" class="btn btn-outline-secondary btn-sm mb-3">
-        <i class="fas fa-arrow-left"></i> Back to Players
-    </a>
-    <h1 class="mb-2">{{ player.name }}</h1>
-    <p class="text-muted">
-        {% if player.team %}
-            <a href="{{ url_for('team_detail', team_id=player.team_id) }}">{{ player.team.name }}</a>
-        {% endif %}
-        {% if player.jersey_number %}
-            | #{{ player.jersey_number }}
-        {% endif %}
-    </p>
-</div>
+<header class="page-header">
+  <a class="btn btn--sm btn--ghost" href="{{ url_for('players') }}" style="margin-bottom: var(--s-5);">
+    {{ icon('arrow-left') }} All players
+  </a>
 
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-user"></i> Player Information</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <strong>Name:</strong>
-                    <p>{{ player.name }}</p>
-                </div>
-                <div class="mb-3">
-                    <strong>Role:</strong>
-                    <p>
-                        <span class="badge bg-info">{{ player.role }}</span>
-                    </p>
-                </div>
-                {% if player.country %}
-                    <div class="mb-3">
-                        <strong>Country:</strong>
-                        <p>{{ player.country }}</p>
-                    </div>
-                {% endif %}
-                {% if player.date_of_birth %}
-                    <div class="mb-3">
-                        <strong>Date of Birth:</strong>
-                        <p>{{ player.date_of_birth.strftime('%d %b %Y') }}</p>
-                    </div>
-                {% endif %}
-                {% if player.batting_style %}
-                    <div class="mb-3">
-                        <strong>Batting Style:</strong>
-                        <p>{{ player.batting_style }}</p>
-                    </div>
-                {% endif %}
-                {% if player.bowling_style %}
-                    <div class="mb-3">
-                        <strong>Bowling Style:</strong>
-                        <p>{{ player.bowling_style }}</p>
-                    </div>
-                {% endif %}
-                {% if player.team %}
-                    <div class="mb-3">
-                        <strong>Current Team:</strong>
-                        <p>
-                            <a href="{{ url_for('team_detail', team_id=player.team_id) }}" class="text-decoration-none">
-                                {{ player.team.name }}
-                            </a>
-                        </p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+  <div class="page-header__row">
+    <div class="cluster" style="gap: var(--s-5); flex-wrap: nowrap;">
+      <span class="monogram monogram--lg" aria-hidden="true">{{ initials }}</span>
+      <div style="min-width: 0;">
+        <p class="eyebrow">
+          {% if player.team %}{{ player.team.name }}{% else %}Unattached{% endif %}
+          {%- if player.jersey_number is not none %} · #{{ player.jersey_number }}{% endif %}
+        </p>
+        <h1>{{ player.name }}</h1>
+      </div>
     </div>
-
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Career Statistics</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <h6 class="text-muted">Matches Played</h6>
-                        <h3>{{ career_stats.matches }}</h3>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <h6 class="text-muted">Total Runs Scored</h6>
-                        <h3>{{ career_stats.total_runs }}</h3>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-muted">Total Wickets</h6>
-                        <h3>{{ career_stats.total_wickets }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="page-header__actions">
+      {{ role_badge(player.role) }}
+      {% if player.team %}
+        <a class="btn btn--sm btn--outline" href="{{ url_for('team_detail', team_id=player.team_id) }}">
+          {{ icon('shield', 'icon--sm') }} {{ player.team.short_name }}
+        </a>
+      {% endif %}
     </div>
-</div>
+  </div>
+</header>
 
-<!-- Batting Statistics -->
+<section aria-labelledby="career-heading" data-reveal="1">
+  <div class="section__head">
+    <h2 class="section__title" id="career-heading">{{ icon('activity') }} Career totals</h2>
+  </div>
+
+  <div class="stat-grid">
+    <article class="stat-tile" style="--tile-accent: var(--series-2);">
+      <p class="stat-tile__head">{{ icon('trophy') }} Matches</p>
+      <p class="stat-tile__value">{{ career_stats.matches|default(0) }}</p>
+      <p class="stat-tile__note">Appearances with recorded stats</p>
+    </article>
+    <article class="stat-tile" style="--tile-accent: var(--series-1);">
+      <p class="stat-tile__head">{{ icon('target') }} Runs</p>
+      <p class="stat-tile__value">{{ career_stats.total_runs|default(0) }}</p>
+      <p class="stat-tile__note">
+        {% if career_stats.strike_rate %}Strike rate {{ career_stats.strike_rate }}{% else %}No balls faced on record{% endif %}
+      </p>
+    </article>
+    <article class="stat-tile" style="--tile-accent: var(--series-5);">
+      <p class="stat-tile__head">{{ icon('circle-dot') }} Wickets</p>
+      <p class="stat-tile__value">{{ career_stats.total_wickets|default(0) }}</p>
+      <p class="stat-tile__note">
+        {% if career_stats.economy %}Economy {{ career_stats.economy }}{% else %}No overs on record{% endif %}
+      </p>
+    </article>
+    <article class="stat-tile" style="--tile-accent: var(--series-3);">
+      <p class="stat-tile__head">{{ icon('award') }} Best score</p>
+      <p class="stat-tile__value">{{ career_stats.highest_score|default(0) }}</p>
+      <p class="stat-tile__note">Highest individual innings</p>
+    </article>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="profile-heading" data-reveal="2">
+  <div class="section__head">
+    <h2 class="section__title" id="profile-heading">{{ icon('user') }} Profile</h2>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel__body">
+        <dl class="def-list">
+          <div class="def-row"><dt>Role</dt><dd>{{ player.role }}</dd></div>
+          <div class="def-row"><dt>Batting style</dt><dd>{{ player.batting_style or 'Not recorded' }}</dd></div>
+          <div class="def-row"><dt>Bowling style</dt><dd>{{ player.bowling_style or 'Not recorded' }}</dd></div>
+        </dl>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel__body">
+        <dl class="def-list">
+          <div class="def-row"><dt>Country</dt><dd>{{ player.country or 'Not recorded' }}</dd></div>
+          <div class="def-row">
+            <dt>Date of birth</dt>
+            <dd class="num">{{ player.date_of_birth.strftime('%d %b %Y') if player.date_of_birth else '—' }}</dd>
+          </div>
+          <div class="def-row">
+            <dt>Current team</dt>
+            <dd>
+              {% if player.team %}
+                <a href="{{ url_for('team_detail', team_id=player.team_id) }}">{{ player.team.name }}</a>
+              {% else %}Unattached{% endif %}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
 {% if batting_stats %}
-    <div class="mb-4">
-        <h3 class="mb-3">
-            <i class="fas fa-baseball"></i> Batting Statistics
-        </h3>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Match</th>
-                        <th>Runs</th>
-                        <th>Balls</th>
-                        <th>4s</th>
-                        <th>6s</th>
-                        <th>Strike Rate</th>
-                        <th>Dismissal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in batting_stats %}
-                        <tr>
-                            <td>
-                                {% if stat.match %}
-                                    <a href="{{ url_for('match_detail', match_id=stat.match_id) }}" class="text-decoration-none">
-                                        Match #{{ stat.match_id }}
-                                    </a>
-                                {% endif %}
-                            </td>
-                            <td><strong>{{ stat.runs }}</strong></td>
-                            <td>{{ stat.balls_faced|default('—') }}</td>
-                            <td>{{ stat.fours }}</td>
-                            <td>{{ stat.sixes }}</td>
-                            <td>
-                                {% if stat.strike_rate %}
-                                    {{ stat.strike_rate|round(2) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>{{ stat.dismissal_type|default('Not Out') }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <section class="section" aria-labelledby="batting-heading" data-reveal="3">
+    <div class="section__head">
+      <h2 class="section__title" id="batting-heading">{{ icon('target') }} Batting record</h2>
+      <span class="section__count">{{ batting_stats|length }} innings</span>
     </div>
+    <div class="panel">
+      <p class="table-scroll-hint">Scroll sideways to see every column.</p>
+      <div class="table-wrap">
+        <table class="data-table" data-sortable>
+          <caption class="visually-hidden">Batting innings for {{ player.name }}</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-sort="number">Match</th>
+              <th scope="col" class="num" data-sort="number">Runs</th>
+              <th scope="col" class="num" data-sort="number">Balls</th>
+              <th scope="col" class="num" data-sort="number">4s</th>
+              <th scope="col" class="num" data-sort="number">6s</th>
+              <th scope="col" class="num" data-sort="number">SR</th>
+              <th scope="col">Dismissal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for stat in batting_stats %}
+              <tr>
+                <td class="mono"><a href="{{ url_for('match_detail', match_id=stat.match_id) }}">#{{ stat.match_id }}</a></td>
+                <td class="num"><strong>{{ stat.runs }}</strong></td>
+                <td class="num">{{ stat.balls_faced if stat.balls_faced is not none else '—' }}</td>
+                <td class="num">{{ stat.fours }}</td>
+                <td class="num">{{ stat.sixes }}</td>
+                <td class="num">{{ stat.strike_rate|round(2) if stat.strike_rate else '—' }}</td>
+                <td style="color: var(--muted);">{{ stat.dismissal_type or 'Not out' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 {% endif %}
 
-<!-- Bowling Statistics -->
 {% if bowling_stats %}
-    <div class="mb-4">
-        <h3 class="mb-3">
-            <i class="fas fa-bowling-ball"></i> Bowling Statistics
-        </h3>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Match</th>
-                        <th>Overs</th>
-                        <th>Maidens</th>
-                        <th>Runs</th>
-                        <th>Wickets</th>
-                        <th>Economy</th>
-                        <th>Dot Balls</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in bowling_stats %}
-                        <tr>
-                            <td>
-                                {% if stat.match %}
-                                    <a href="{{ url_for('match_detail', match_id=stat.match_id) }}" class="text-decoration-none">
-                                        Match #{{ stat.match_id }}
-                                    </a>
-                                {% endif %}
-                            </td>
-                            <td>{{ stat.overs|default('—') }}</td>
-                            <td>{{ stat.maidens }}</td>
-                            <td>{{ stat.runs_conceded }}</td>
-                            <td><strong>{{ stat.wickets }}</strong></td>
-                            <td>
-                                {% if stat.economy_rate %}
-                                    {{ stat.economy_rate|round(2) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>{{ stat.dot_balls }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <section class="section" aria-labelledby="bowling-heading" data-reveal="4">
+    <div class="section__head">
+      <h2 class="section__title" id="bowling-heading">{{ icon('circle-dot') }} Bowling record</h2>
+      <span class="section__count">{{ bowling_stats|length }} spells</span>
     </div>
+    <div class="panel">
+      <p class="table-scroll-hint">Scroll sideways to see every column.</p>
+      <div class="table-wrap">
+        <table class="data-table" data-sortable>
+          <caption class="visually-hidden">Bowling spells for {{ player.name }}</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-sort="number">Match</th>
+              <th scope="col" class="num" data-sort="number">Overs</th>
+              <th scope="col" class="num" data-sort="number">Maidens</th>
+              <th scope="col" class="num" data-sort="number">Runs</th>
+              <th scope="col" class="num" data-sort="number">Wickets</th>
+              <th scope="col" class="num" data-sort="number">Econ</th>
+              <th scope="col" class="num" data-sort="number">Dots</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for stat in bowling_stats %}
+              <tr>
+                <td class="mono"><a href="{{ url_for('match_detail', match_id=stat.match_id) }}">#{{ stat.match_id }}</a></td>
+                <td class="num">{{ stat.overs if stat.overs is not none else '—' }}</td>
+                <td class="num">{{ stat.maidens }}</td>
+                <td class="num">{{ stat.runs_conceded }}</td>
+                <td class="num"><strong>{{ stat.wickets }}</strong></td>
+                <td class="num">{{ stat.economy_rate|round(2) if stat.economy_rate else '—' }}</td>
+                <td class="num">{{ stat.dot_balls }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 {% endif %}
 
 {% if not batting_stats and not bowling_stats %}
-    <div class="alert alert-info" role="alert">
-        <i class="fas fa-info-circle"></i> No match statistics available for this player yet.
-    </div>
+  <section class="section" data-reveal="3">
+    {{ empty_state('bar-chart', 'No match statistics yet',
+                   'Ball-by-ball records for ' ~ player.name ~ ' have not been loaded. Career totals will fill in as scorecards are added.',
+                   url_for('matches'), 'Browse matches', 'trophy') }}
+  </section>
 {% endif %}
 {% endblock %}

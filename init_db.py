@@ -21,8 +21,10 @@ db.init_app(app)
 def init_database():
     """Initialize database with tables"""
     with app.app_context():
-        print("[v0] Creating database tables...")
+        print("[v0] Dropping and recreating database tables...")
+        db.drop_all()
         db.create_all()
+        print("[v0] Database tables created successfully!")
         print("[v0] Database tables created successfully!")
 
 
@@ -118,101 +120,28 @@ def add_sample_teams():
 
 
 def add_sample_players():
-    """Add sample players"""
+    """Add real IPL players"""
     with app.app_context():
-        # Check if players already exist
-        if Player.query.count() > 0:
-            print("[v0] Players already exist, skipping...")
+        # Import real players data
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), 'scripts'))
+        try:
+            from real_players_data import real_players_data
+        except ImportError as e:
+            print(f"[v0] Failed to import real players data: {e}")
             return
-        
-        players_data = [
-            # MI Players
-            {
-                'name': 'Rohit Sharma',
-                'jersey_number': 1,
-                'role': 'Batsman',
-                'batting_style': 'Right-handed',
-                'country': 'India',
-                'team_id': 1
-            },
-            {
-                'name': 'Jasprit Bumrah',
-                'jersey_number': 93,
-                'role': 'Bowler',
-                'bowling_style': 'Right-arm fast',
-                'country': 'India',
-                'team_id': 1
-            },
-            {
-                'name': 'Suryakumar Yadav',
-                'jersey_number': 63,
-                'role': 'Batsman',
-                'batting_style': 'Right-handed',
-                'country': 'India',
-                'team_id': 1
-            },
-            # CSK Players
-            {
-                'name': 'MS Dhoni',
-                'jersey_number': 7,
-                'role': 'Wicket-keeper',
-                'batting_style': 'Right-handed',
-                'country': 'India',
-                'team_id': 2
-            },
-            {
-                'name': 'Ravindra Jadeja',
-                'jersey_number': 8,
-                'role': 'All-rounder',
-                'batting_style': 'Left-handed',
-                'bowling_style': 'Left-arm orthodox',
-                'country': 'India',
-                'team_id': 2
-            },
-            # RCB Players
-            {
-                'name': 'Virat Kohli',
-                'jersey_number': 18,
-                'role': 'Batsman',
-                'batting_style': 'Right-handed',
-                'country': 'India',
-                'team_id': 3
-            },
-            {
-                'name': 'AB de Villiers',
-                'jersey_number': 17,
-                'role': 'Batsman',
-                'batting_style': 'Right-handed',
-                'country': 'South Africa',
-                'team_id': 3
-            },
-            # DC Players
-            {
-                'name': 'Prithvi Shaw',
-                'jersey_number': 3,
-                'role': 'Batsman',
-                'batting_style': 'Right-handed',
-                'country': 'India',
-                'team_id': 4
-            },
-            # KKR Players
-            {
-                'name': 'Andre Russell',
-                'jersey_number': 10,
-                'role': 'All-rounder',
-                'batting_style': 'Right-handed',
-                'bowling_style': 'Right-arm fast',
-                'country': 'West Indies',
-                'team_id': 5
-            },
-        ]
-        
-        for player_data in players_data:
-            player = Player(**player_data)
-            db.session.add(player)
+            
+        players_added = 0
+        for team_id, players in real_players_data.items():
+            for player_data in players:
+                player_data['team_id'] = team_id
+                player = Player(**player_data)
+                db.session.add(player)
+                players_added += 1
         
         db.session.commit()
-        print(f"[v0] Added {len(players_data)} players")
+        print(f"[v0] Added {players_added} players")
 
 
 def add_sample_matches():

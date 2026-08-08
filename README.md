@@ -10,16 +10,19 @@ A comprehensive Indian Premier League (IPL) cricket analytics platform built wit
 - **Batting Statistics**: Track runs, strike rates, dismissals, and individual performance
 - **Bowling Statistics**: Monitor wickets, economy rates, and bowling performance
 - **Season Statistics**: View team performance across IPL seasons
-- **Responsive Design**: Mobile-friendly Bootstrap 5 interface
-- **Search & Filter**: Filter players by role, matches by season
+- **Responsive Design**: Sidebar shell on desktop, drawer navigation on mobile, dark and light themes
+- **Search & Filter**: Server-side role and season filters, plus instant client-side filtering and column sorting on every table
 
 ## Tech Stack
 
-- **Backend**: Flask 2.3.3 (Python web framework)
-- **Database**: MySQL with SQLAlchemy ORM
-- **Frontend**: Bootstrap 5, HTML5, CSS3, JavaScript
-- **Templating**: Jinja2
+- **Backend**: Flask (Python web framework)
+- **Database**: MySQL with SQLAlchemy ORM (SQLite in development)
+- **Frontend**: Jinja2 templates, a custom OKLCH design-token CSS layer on top of Bootstrap 5 grid/reset, vanilla JavaScript
+- **Icons**: Inline SVG sprite (`templates/_icons.html`) — no icon webfont
+- **Charts**: Chart.js, loaded only on the pages that render charts
 - **Database Migrations**: Flask-Migrate
+
+See [DESIGN.md](DESIGN.md) for the design system: tokens, components and the rules the interface follows.
 
 ## Project Structure
 

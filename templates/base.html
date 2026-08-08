@@ -1,105 +1,172 @@
+{% from "_icons.html" import icon, sprite %}
+{% set nav_sections = [
+    {'label': None, 'items': [
+        {'endpoint': 'index', 'label': 'Overview', 'icon': 'home'}
+    ]},
+    {'label': 'Explore', 'items': [
+        {'endpoint': 'teams', 'label': 'Teams', 'icon': 'shield', 'also': ['team_detail']},
+        {'endpoint': 'players', 'label': 'Players', 'icon': 'users', 'also': ['player_detail']},
+        {'endpoint': 'matches', 'label': 'Matches', 'icon': 'trophy', 'also': ['match_detail']}
+    ]},
+    {'label': 'Intelligence', 'items': [
+        {'endpoint': 'analytics', 'label': 'Analytics', 'icon': 'pie-chart'},
+        {'endpoint': 'predictions', 'label': 'Predictions', 'icon': 'sparkles'},
+        {'endpoint': 'assistant', 'label': 'Selection Assistant', 'icon': 'clipboard-check'},
+        {'endpoint': 'similarity', 'label': 'Player Similarity', 'icon': 'share'}
+    ]}
+] %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CricketIQ - IPL Analytics Platform{% endblock %}</title>
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {% block extra_css %}{% endblock %}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="{% block meta_description %}CricketIQ — IPL analytics: team and player databases, match records, performance trends and predictive models.{% endblock %}">
+<meta name="theme-color" content="#141518">
+<title>{% block title %}CricketIQ{% endblock %}</title>
+
+{# Resolve the stored theme before first paint so there is no flash. #}
+<script>
+  (function () {
+    var theme = 'dark';
+    try {
+      var stored = localStorage.getItem('cricketiq-theme');
+      if (stored === 'light' || stored === 'dark') theme = stored;
+    } catch (e) { /* storage blocked */ }
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+
+<link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-                <i class="fas fa-cricket"></i> CricketIQ
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
-                            <i class="fas fa-home"></i> Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'teams' or request.endpoint == 'team_detail' %}active{% endif %}" href="{{ url_for('teams') }}">
-                            <i class="fas fa-users"></i> Teams
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'players' or request.endpoint == 'player_detail' %}active{% endif %}" href="{{ url_for('players') }}">
-                            <i class="fas fa-user"></i> Players
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'matches' or request.endpoint == 'match_detail' %}active{% endif %}" href="{{ url_for('matches') }}">
-                            <i class="fas fa-trophy"></i> Matches
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+{{ sprite() }}
 
-    <!-- Main Content -->
-    <main class="py-4">
-        <div class="container-fluid">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+<a class="skip-link" href="#main-content">Skip to main content</a>
 
-            {% block content %}{% endblock %}
-        </div>
+<div class="app">
+
+  <div class="scrim" data-scrim hidden></div>
+
+  <aside class="sidebar" id="app-sidebar" data-sidebar aria-label="Primary">
+    <div class="sidebar__head">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand__mark">{{ icon('zap') }}</span>
+        <span>CricketIQ</span>
+      </a>
+      <button type="button" class="btn btn--icon nav-toggle" data-close-nav aria-label="Close navigation">
+        {{ icon('x') }}
+      </button>
+    </div>
+
+    <div class="sidebar__scroll">
+      {% for section in nav_sections %}
+        <nav class="nav-group"{% if section.label %} aria-label="{{ section.label }}"{% endif %}>
+          {% if section.label %}<p class="nav-group__label">{{ section.label }}</p>{% endif %}
+          <ul class="nav-list">
+            {% for item in section['items'] %}
+              {% set is_current = request.endpoint == item.endpoint or request.endpoint in item.get('also', []) %}
+              <li>
+                <a class="nav-link" href="{{ url_for(item.endpoint) }}"{% if is_current %} aria-current="page"{% endif %}>
+                  {{ icon(item.icon) }}
+                  <span>{{ item.label }}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+      {% endfor %}
+    </div>
+
+    <div class="sidebar__foot">
+      <p class="mb-0">IPL data explorer &amp; prediction lab.</p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="btn btn--icon nav-toggle" data-open-nav
+              aria-label="Open navigation" aria-controls="app-sidebar" aria-expanded="false">
+        {{ icon('menu') }}
+      </button>
+
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="crumbs">
+          <li><a href="{{ url_for('index') }}">CricketIQ</a></li>
+          {% block breadcrumbs %}{% endblock %}
+        </ol>
+      </nav>
+
+      <div class="topbar__spacer"></div>
+
+      <button type="button" class="btn btn--icon" data-theme-toggle aria-label="Switch to light theme">
+        <span data-theme-icon="dark">{{ icon('sun') }}</span>
+        <span data-theme-icon="light" hidden>{{ icon('moon') }}</span>
+      </button>
+    </header>
+
+    <main class="page" id="main-content" tabindex="-1">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="stack stack-3" style="margin-bottom: var(--s-6);">
+            {% for category, message in messages %}
+              <div class="note note--{{ {'error':'neg','danger':'neg','warning':'warn','success':'pos'}.get(category, 'info') }}" role="status">
+                {{ icon('info') }}<span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-light py-4 mt-5">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <h5><i class="fas fa-cricket"></i> CricketIQ</h5>
-                    <p class="text-muted small">Your comprehensive IPL Analytics Platform</p>
-                </div>
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <h6>Quick Links</h6>
-                    <ul class="list-unstyled small">
-                        <li><a href="{{ url_for('teams') }}" class="text-muted text-decoration-none">Teams</a></li>
-                        <li><a href="{{ url_for('players') }}" class="text-muted text-decoration-none">Players</a></li>
-                        <li><a href="{{ url_for('matches') }}" class="text-muted text-decoration-none">Matches</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <h6>About</h6>
-                    <p class="text-muted small">CricketIQ provides comprehensive analytics and insights for IPL cricket.</p>
-                </div>
-            </div>
-            <hr class="bg-secondary">
-            <div class="text-center text-muted small">
-                <p>&copy; 2024 CricketIQ. All rights reserved.</p>
-            </div>
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <div>
+          <a class="brand" href="{{ url_for('index') }}">
+            <span class="brand__mark">{{ icon('zap') }}</span>
+            <span>CricketIQ</span>
+          </a>
+          <p class="mt-3 mb-0" style="color: var(--muted); font-size: var(--t-sm); max-width: 34ch;">
+            Team, player and match records for the Indian Premier League, with statistical models layered on top.
+          </p>
         </div>
+        <div>
+          <h2>Explore</h2>
+          <ul>
+            <li><a href="{{ url_for('teams') }}">Teams</a></li>
+            <li><a href="{{ url_for('players') }}">Players</a></li>
+            <li><a href="{{ url_for('matches') }}">Matches</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Intelligence</h2>
+          <ul>
+            <li><a href="{{ url_for('analytics') }}">Analytics</a></li>
+            <li><a href="{{ url_for('predictions') }}">Predictions</a></li>
+            <li><a href="{{ url_for('assistant') }}">Selection Assistant</a></li>
+            <li><a href="{{ url_for('similarity') }}">Player Similarity</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__legal">
+        <span>&copy; {{ current_year }} CricketIQ</span>
+        <span>Predictions are statistical estimates, not betting advice.</span>
+      </div>
     </footer>
+  </div>
+</div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% block extra_js %}{% endblock %}
+<div class="toast-region" data-toast-region role="region" aria-label="Notifications" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

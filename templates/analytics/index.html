@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Analytics — CricketIQ{% endblock %}
+{% block meta_description %}Season-by-season IPL win trends and all-time leaderboards for runs and wickets.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">Analytics</li>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div class="page-header__row">
+    <div>
+      <p class="eyebrow">Intelligence</p>
+      <h1>Analytics</h1>
+      <p class="lede">Win trends across seasons, plus the all-time run and wicket leaderboards.</p>
+    </div>
+  </div>
+</header>
+
+<section class="panel" aria-labelledby="trends-heading" data-reveal="1">
+  <div class="panel__head">
+    <h2 class="panel__title" id="trends-heading">{{ icon('trending-up') }} Wins per season</h2>
+    <span class="section__count" data-chart-subtitle="teamTrends">One line per franchise</span>
+  </div>
+  <div class="panel__body">
+    <div class="chart-frame chart-frame--tall"
+         data-chart="teamTrends"
+         data-endpoint="{{ url_for('api_team_trends') }}">
+      <canvas id="teamTrendsChart" role="img"
+              aria-label="Line chart of wins per season for each IPL franchise"></canvas>
+      <div class="skeleton skeleton--chart" data-chart-skeleton></div>
+    </div>
+    <div class="chart-legend" data-chart-legend="teamTrends"></div>
+    <p class="chart-note is-hidden" data-chart-note="teamTrends"></p>
+    <p class="visually-hidden" data-chart-summary="teamTrends"></p>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="leaders-heading" data-reveal="2">
+  <div class="section__head">
+    <h2 class="section__title" id="leaders-heading">{{ icon('award') }} All-time leaderboards</h2>
+  </div>
+
+  <div class="note note--info" style="margin-bottom: var(--s-5);">
+    {{ icon('info') }}
+    <span>These two leaderboards use published IPL career totals, not the match records in this database.</span>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel__head">
+        <h3 class="panel__title">{{ icon('target') }} Most runs</h3>
+      </div>
+      <div class="panel__body">
+        <div class="chart-frame chart-frame--mid">
+          <canvas id="topScorersChart" role="img"
+                  aria-label="Bar chart of the five highest IPL run scorers of all time"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <h3 class="panel__title">{{ icon('circle-dot') }} Most wickets</h3>
+      </div>
+      <div class="panel__body">
+        <div class="chart-frame chart-frame--mid">
+          <canvas id="topWicketsChart" role="img"
+                  aria-label="Bar chart of the five highest IPL wicket takers of all time"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+<script src="{{ url_for('static', filename='js/analytics.js') }}" defer></script>
+{% endblock %}

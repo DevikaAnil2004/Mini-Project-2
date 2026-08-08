@@ -1,97 +1,78 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_components.html" import pager, empty_state, filter_empty, table_search %}
 
-{% block title %}Teams - CricketIQ{% endblock %}
+{% block title %}Teams — CricketIQ{% endblock %}
+{% block meta_description %}Every IPL franchise on record: home ground, city, ownership, coaching staff and current squad size.{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">Teams</li>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <h1 class="mb-4">
-        <i class="fas fa-users"></i> IPL Teams
-    </h1>
-    <p class="text-muted">Browse all Indian Premier League teams and their detailed information.</p>
-</div>
+<header class="page-header">
+  <div class="page-header__row">
+    <div>
+      <p class="eyebrow">Directory</p>
+      <h1>Teams</h1>
+      <p class="lede">Every franchise on record, with home ground, ownership and squad size.</p>
+    </div>
+    <div class="page-header__actions">
+      {{ table_search('teams', 'Filter teams…', 'Filter teams by name or city') }}
+    </div>
+  </div>
+</header>
 
 {% if teams %}
-    <div class="row g-4">
-        {% for team in teams %}
-            <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="card h-100 team-card shadow-sm hover-effect">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">{{ team.name }}</h5>
-                        <small class="text-light">{{ team.short_name }}</small>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <small class="text-muted d-block"><i class="fas fa-map-marker-alt"></i> {{ team.city }}</small>
-                            <small class="text-muted d-block"><i class="fas fa-building"></i> {{ team.home_ground|default('N/A') }}</small>
-                            {% if team.founded_year %}
-                                <small class="text-muted d-block"><i class="fas fa-calendar"></i> Founded {{ team.founded_year }}</small>
-                            {% endif %}
-                        </div>
-                        
-                        {% if team.owner %}
-                            <div class="mb-2">
-                                <small class="text-muted d-block"><strong>Owner:</strong> {{ team.owner }}</small>
-                            </div>
-                        {% endif %}
-                        
-                        {% if team.coach %}
-                            <div class="mb-3">
-                                <small class="text-muted d-block"><strong>Coach:</strong> {{ team.coach }}</small>
-                            </div>
-                        {% endif %}
-                        
-                        <hr>
-                        <div class="mb-3">
-                            <small class="badge bg-info">{{ team.players|length }} Players</small>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-light">
-                        <a href="{{ url_for('team_detail', team_id=team.id) }}" class="btn btn-sm btn-primary w-100">
-                            <i class="fas fa-arrow-right"></i> View Details
-                        </a>
-                    </div>
-                </div>
+  <div class="grid-3" data-filter-target="teams">
+    {% for team in teams %}
+      <a class="panel panel--link" href="{{ url_for('team_detail', team_id=team.id) }}"
+         data-filter-text="{{ team.name }} {{ team.short_name }} {{ team.city }}"
+         data-reveal="{{ (loop.index0 % 6) + 1 }}">
+        <div class="panel__body stack stack-4">
+          <div class="cluster" style="flex-wrap: nowrap;">
+            <span class="monogram monogram--accent monogram--lg">{{ team.short_name }}</span>
+            <span style="min-width: 0;">
+              <span class="d-block" style="font-family: var(--font-display); font-size: var(--t-lg); font-weight: 650; letter-spacing: -0.02em;">{{ team.name }}</span>
+              <span class="d-block" style="color: var(--muted); font-size: var(--t-sm);">{{ team.city }}</span>
+            </span>
+          </div>
+
+          <dl class="def-list">
+            <div class="def-row">
+              <dt>Home ground</dt>
+              <dd>{{ team.home_ground or 'Not recorded' }}</dd>
             </div>
-        {% endfor %}
-    </div>
+            {% if team.founded_year %}
+              <div class="def-row">
+                <dt>Founded</dt>
+                <dd class="num">{{ team.founded_year }}</dd>
+              </div>
+            {% endif %}
+            {% if team.coach %}
+              <div class="def-row">
+                <dt>Head coach</dt>
+                <dd>{{ team.coach }}</dd>
+              </div>
+            {% endif %}
+          </dl>
 
-    <!-- Pagination -->
-    {% if pagination and pagination.pages > 1 %}
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if pagination.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('teams', page=pagination.prev_num) }}">Previous</a>
-                    </li>
-                {% endif %}
+          <div class="row-between">
+            <span class="badge-pill badge-pill--none">{{ icon('users', 'icon--sm') }} {{ team.players|length }} players</span>
+            <span class="feature__cta">View team {{ icon('arrow-right') }}</span>
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
 
-                {% for page_num in pagination.iter_pages() %}
-                    {% if page_num %}
-                        {% if page_num == pagination.page %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ page_num }}</span>
-                            </li>
-                        {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('teams', page=page_num) }}">{{ page_num }}</a>
-                            </li>
-                        {% endif %}
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
-                    {% endif %}
-                {% endfor %}
+  {{ filter_empty('teams', 'teams') }}
 
-                {% if pagination.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('teams', page=pagination.next_num) }}">Next</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
+  {{ pager(pagination, 'teams') }}
 {% else %}
-    <div class="alert alert-info" role="alert">
-        <i class="fas fa-info-circle"></i> No teams available. Please add team data first.
-    </div>
+  {{ empty_state('shield', 'No teams on record',
+                 'The teams table is empty. Load franchise data and this directory will populate automatically.',
+                 url_for('index'), 'Back to overview', 'home') }}
 {% endif %}
 {% endblock %}

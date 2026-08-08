@@ -1,22 +1,22 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
-{% block title %}Server Error - CricketIQ{% endblock %}
+{% block title %}Server error — CricketIQ{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="crumbs__sep" aria-hidden="true">/</li>
+  <li aria-current="page">Error</li>
+{% endblock %}
 
 {% block content %}
-<div class="text-center py-5">
-    <i class="fas fa-exclamation-triangle" style="font-size: 60px; color: #dc3545;"></i>
-    <h1 class="display-4 my-4">500</h1>
-    <h2 class="mb-3">Server Error</h2>
-    <p class="lead text-muted mb-4">
-        Something went wrong on our end. We&apos;re working to fix it. Please try again later.
-    </p>
-    <div class="d-flex gap-2 justify-content-center">
-        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
-            <i class="fas fa-home"></i> Go to Home
-        </a>
-        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
-            <i class="fas fa-arrow-left"></i> Go Back
-        </a>
-    </div>
+<div class="empty" style="border-style: solid; padding-block: var(--s-20);">
+  <span class="empty__icon">{{ icon('alert-triangle') }}</span>
+  <p class="eyebrow num">500</p>
+  <h1 style="font-size: var(--t-2xl);">Something broke on our end</h1>
+  <p>The request failed while the server was handling it. Reloading often clears a one-off failure.</p>
+  <div class="cluster" style="justify-content: center; margin-top: var(--s-5);">
+    <a class="btn btn--primary" href="{{ url_for('index') }}">{{ icon('home') }} Back to overview</a>
+    <button type="button" class="btn btn--outline" onclick="window.location.reload()">{{ icon('reset') }} Try again</button>
+  </div>
 </div>
 {% endblock %}
