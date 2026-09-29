@@ -52,3 +52,9 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
+
+# Node
+node_modules/
+
+# Raw scraped archive
+data/cricsheet_ipl/

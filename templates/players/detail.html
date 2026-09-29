@@ -52,27 +52,59 @@
     <article class="stat-tile" style="--tile-accent: var(--series-2);">
       <p class="stat-tile__head">{{ icon('trophy') }} Matches</p>
       <p class="stat-tile__value">{{ career_stats.matches|default(0) }}</p>
-      <p class="stat-tile__note">Appearances with recorded stats</p>
+      <p class="stat-tile__note">{{ career_stats.innings_batted|default(0) }} inn batted · {{ career_stats.innings_bowled|default(0) }} inn bowled</p>
     </article>
     <article class="stat-tile" style="--tile-accent: var(--series-1);">
       <p class="stat-tile__head">{{ icon('target') }} Runs</p>
       <p class="stat-tile__value">{{ career_stats.total_runs|default(0) }}</p>
       <p class="stat-tile__note">
-        {% if career_stats.strike_rate %}Strike rate {{ career_stats.strike_rate }}{% else %}No balls faced on record{% endif %}
+        {% if career_stats.batting_average %}Avg {{ career_stats.batting_average }}{% else %}No avg on record{% endif %} · {% if career_stats.strike_rate %}SR {{ career_stats.strike_rate }}{% else %}—{% endif %}
       </p>
     </article>
     <article class="stat-tile" style="--tile-accent: var(--series-5);">
       <p class="stat-tile__head">{{ icon('circle-dot') }} Wickets</p>
       <p class="stat-tile__value">{{ career_stats.total_wickets|default(0) }}</p>
       <p class="stat-tile__note">
-        {% if career_stats.economy %}Economy {{ career_stats.economy }}{% else %}No overs on record{% endif %}
+        {% if career_stats.economy %}Econ {{ career_stats.economy }}{% else %}No overs{% endif %} · Best {{ career_stats.best_bowling }}
       </p>
     </article>
     <article class="stat-tile" style="--tile-accent: var(--series-3);">
       <p class="stat-tile__head">{{ icon('award') }} Best score</p>
       <p class="stat-tile__value">{{ career_stats.highest_score|default(0) }}</p>
-      <p class="stat-tile__note">Highest individual innings</p>
+      <p class="stat-tile__note">{{ career_stats.hundreds|default(0) }} × 100s · {{ career_stats.fifties|default(0) }} × 50s</p>
     </article>
+  </div>
+
+  <div class="grid-2" style="margin-top: var(--s-4);">
+    <div class="panel">
+      <div class="panel__head">
+        <h3 class="panel__title">{{ icon('target') }} Batting milestones</h3>
+      </div>
+      <div class="panel__body">
+        <dl class="def-list">
+          <div class="def-row"><dt>Batting Average</dt><dd class="num">{{ career_stats.batting_average if career_stats.batting_average is not none else '—' }}</dd></div>
+          <div class="def-row"><dt>Strike Rate</dt><dd class="num">{{ career_stats.strike_rate if career_stats.strike_rate is not none else '—' }}</dd></div>
+          <div class="def-row"><dt>Centuries (100s)</dt><dd class="num"><strong>{{ career_stats.hundreds|default(0) }}</strong></dd></div>
+          <div class="def-row"><dt>Half-Centuries (50s)</dt><dd class="num"><strong>{{ career_stats.fifties|default(0) }}</strong></dd></div>
+          <div class="def-row"><dt>Boundaries (4s / 6s)</dt><dd class="num">{{ career_stats.fours|default(0) }} fours · {{ career_stats.sixes|default(0) }} sixes</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <h3 class="panel__title">{{ icon('circle-dot') }} Bowling milestones</h3>
+      </div>
+      <div class="panel__body">
+        <dl class="def-list">
+          <div class="def-row"><dt>Best Bowling</dt><dd class="num"><strong>{{ career_stats.best_bowling }}</strong></dd></div>
+          <div class="def-row"><dt>Economy Rate</dt><dd class="num">{{ career_stats.economy if career_stats.economy is not none else '—' }}</dd></div>
+          <div class="def-row"><dt>4-Wicket Hauls</dt><dd class="num">{{ career_stats.four_wickets|default(0) }}</dd></div>
+          <div class="def-row"><dt>5-Wicket Hauls</dt><dd class="num">{{ career_stats.five_wickets|default(0) }}</dd></div>
+          <div class="def-row"><dt>Dot Balls Bowled</dt><dd class="num">{{ career_stats.dot_balls|default(0) }}</dd></div>
+        </dl>
+      </div>
+    </div>
   </div>
 </section>
 

@@ -22,6 +22,11 @@
 </header>
 
 <form method="get" class="filter-bar" data-reveal="1">
+  <div class="field" style="min-width: 200px;">
+    <label class="field__label" for="playerSearchInput">{{ icon('search', 'icon--sm') }} Search player</label>
+    <input class="input" id="playerSearchInput" name="q" type="search" value="{{ search_query }}" placeholder="e.g. Kohli, Rohit, Dhoni...">
+  </div>
+
   <div class="field">
     <label class="field__label" for="roleFilter">{{ icon('filter', 'icon--sm') }} Role</label>
     <select class="select" id="roleFilter" name="role">
@@ -32,11 +37,19 @@
     </select>
   </div>
 
-  {{ table_search('players', 'Filter this page…', 'Filter the players on this page by name, team or country') }}
+  <div class="field">
+    <label class="field__label" for="teamFilter">{{ icon('shield', 'icon--sm') }} Team</label>
+    <select class="select" id="teamFilter" name="team">
+      <option value="">All franchises</option>
+      {% for t in teams %}
+        <option value="{{ t.id }}" {% if selected_team == t.id %}selected{% endif %}>{{ t.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
 
   <div class="filter-bar__actions">
-    <button type="submit" class="btn btn--primary">{{ icon('filter', 'icon--sm') }} Apply</button>
-    {% if selected_role %}
+    <button type="submit" class="btn btn--primary">{{ icon('filter', 'icon--sm') }} Search & Filter</button>
+    {% if selected_role or selected_team or search_query %}
       <a class="btn btn--ghost" href="{{ url_for('players') }}">{{ icon('reset', 'icon--sm') }} Reset</a>
     {% endif %}
   </div>
@@ -48,7 +61,7 @@
       <h2 class="section__title">{{ icon('list') }} Results</h2>
       <span class="section__count">
         {% if pagination %}
-          {{ pagination.total }} player{{ '' if pagination.total == 1 else 's' }}{% if selected_role %} · {{ selected_role }}{% endif %}
+          {{ pagination.total }} player{{ '' if pagination.total == 1 else 's' }}{% if selected_role %} · {{ selected_role }}{% endif %}{% if search_query %} · matching "{{ search_query }}"{% endif %}
         {% else %}
           {{ players|length }} shown
         {% endif %}
@@ -75,7 +88,7 @@
             {% for player in players %}
               <tr data-filter-text="{{ player.name }} {{ player.role }} {{ player.country or '' }} {{ player.team.short_name if player.team else '' }}">
                 <td>
-                  <a href="{{ url_for('player_detail', player_id=player.id) }}">{{ player.name }}</a>
+                  <a href="{{ url_for('player_detail', player_id=player.id) }}"><strong>{{ player.name }}</strong></a>
                   {% if player.jersey_number is not none %}
                     <span class="num" style="color: var(--faint); font-size: var(--t-xs); display: block;">#{{ player.jersey_number }}</span>
                   {% endif %}
@@ -93,7 +106,7 @@
                 <td style="color: var(--muted);">{{ player.country or '—' }}</td>
                 <td class="num">
                   <a class="btn btn--sm btn--outline" href="{{ url_for('player_detail', player_id=player.id) }}">
-                    {{ icon('eye', 'icon--sm') }} View<span class="visually-hidden"> {{ player.name }}</span>
+                    {{ icon('eye', 'icon--sm') }} View Profile<span class="visually-hidden"> {{ player.name }}</span>
                   </a>
                 </td>
               </tr>
@@ -105,15 +118,20 @@
 
     {{ filter_empty('players', 'players') }}
 
-    {{ pager(pagination, 'players', {'role': selected_role} if selected_role else {}) }}
+    {% set filter_params = {} %}
+    {% if selected_role %}{% set _ = filter_params.update({'role': selected_role}) %}{% endif %}
+    {% if selected_team %}{% set _ = filter_params.update({'team': selected_team}) %}{% endif %}
+    {% if search_query %}{% set _ = filter_params.update({'q': search_query}) %}{% endif %}
+    {{ pager(pagination, 'players', filter_params) }}
   </section>
-{% elif selected_role %}
-  {{ empty_state('search', 'No ' ~ selected_role ~ 's found',
-                 'No active players match this role. Try a different role or clear the filter.',
-                 url_for('players'), 'Clear filter', 'reset') }}
+{% elif selected_role or selected_team or search_query %}
+  {{ empty_state('search', 'No players found',
+                 'No players match your search criteria. Try a different query, role, or team.',
+                 url_for('players'), 'Clear filters', 'reset') }}
 {% else %}
   {{ empty_state('users', 'No players on record',
                  'The players table is empty. Load squad data and this directory will populate automatically.',
                  url_for('index'), 'Back to overview', 'home') }}
 {% endif %}
+
 {% endblock %}

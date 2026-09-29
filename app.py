@@ -80,7 +80,7 @@ def teams():
         teams_list = (Team.query
                       .options(selectinload(Team.players))
                       .order_by(Team.name)
-                      .paginate(page=page, per_page=12, error_out=False))
+                      .paginate(page=page, per_page=20, error_out=False))
         return render_template('teams/index.html', teams=teams_list.items, pagination=teams_list)
     except Exception as e:
         app.logger.exception('Error on teams route: %s', e)
@@ -104,10 +104,12 @@ def team_detail(team_id):
 
 @app.route('/players')
 def players():
-    """Players listing page"""
+    """Players listing page with role, team and search filters"""
     roles = ['Batsman', 'Bowler', 'All-rounder', 'Wicket-keeper']
     try:
-        role_filter = request.args.get('role', '')
+        role_filter = request.args.get('role', '').strip()
+        search_query = request.args.get('q', '').strip()
+        team_filter = request.args.get('team', type=int)
         page = request.args.get('page', 1, type=int)
 
         query = Player.query.options(joinedload(Player.team)).filter_by(is_active=True)
@@ -116,17 +118,32 @@ def players():
         else:
             role_filter = ''
 
-        players_list = query.order_by(Player.name).paginate(page=page, per_page=20, error_out=False)
+        if team_filter:
+            query = query.filter_by(team_id=team_filter)
+
+        if search_query:
+            search_pattern = f'%{search_query}%'
+            query = query.filter(
+                (Player.name.ilike(search_pattern)) |
+                (Player.country.ilike(search_pattern))
+            )
+
+        players_list = query.order_by(Player.name).paginate(page=page, per_page=24, error_out=False)
+        all_teams = Team.query.order_by(Team.name).all()
 
         return render_template('players/index.html',
                                players=players_list.items,
                                pagination=players_list,
                                roles=roles,
-                               selected_role=role_filter)
+                               teams=all_teams,
+                               selected_role=role_filter,
+                               selected_team=team_filter,
+                               search_query=search_query)
     except Exception as e:
         app.logger.exception('Error on players route: %s', e)
         return render_template('players/index.html',
-                               players=[], pagination=None, roles=roles, selected_role='')
+                               players=[], pagination=None, roles=roles, teams=[],
+                               selected_role='', selected_team=None, search_query='')
 
 
 @app.route('/players/<int:player_id>')
@@ -150,7 +167,37 @@ def player_detail(player_id):
     total_runs = sum(s.runs or 0 for s in batting_stats)
     balls_faced = sum(s.balls_faced or 0 for s in batting_stats)
     runs_conceded = sum(s.runs_conceded or 0 for s in bowling_stats)
-    overs_bowled = sum(s.overs or 0 for s in bowling_stats)
+    # Comprehensive career aggregates
+    fours = sum(s.fours or 0 for s in batting_stats)
+    sixes = sum(s.sixes or 0 for s in batting_stats)
+    fifties = sum(1 for s in batting_stats if 50 <= (s.runs or 0) < 100)
+    hundreds = sum(1 for s in batting_stats if (s.runs or 0) >= 100)
+    dismissals = sum(1 for s in batting_stats if s.dismissal_type and s.dismissal_type != 'Not out')
+    batting_avg = round(total_runs / dismissals, 2) if dismissals > 0 else (float(total_runs) if total_runs > 0 else None)
+
+    # Best bowling calculation
+    best_wickets = 0
+    best_runs = 999
+    best_bowling_str = '—'
+    four_wickets = 0
+    five_wickets = 0
+    dot_balls = sum(s.dot_balls or 0 for s in bowling_stats)
+
+    for s in bowling_stats:
+        w = s.wickets or 0
+        rc = s.runs_conceded or 0
+        if w >= 5:
+            five_wickets += 1
+        elif w == 4:
+            four_wickets += 1
+        if w > best_wickets or (w == best_wickets and w > 0 and rc < best_runs):
+            best_wickets = w
+            best_runs = rc
+            best_bowling_str = f"{best_wickets}/{best_runs}"
+
+    # Also compute overs bowled properly
+    total_balls_bowled = sum(int(s.overs or 0) * 6 + int(round(((s.overs or 0) - int(s.overs or 0)) * 10)) for s in bowling_stats)
+    total_overs_decimal = total_balls_bowled / 6.0 if total_balls_bowled > 0 else 0.0
 
     career_stats = {
         'matches': len(match_ids),
@@ -160,7 +207,16 @@ def player_detail(player_id):
         'total_wickets': sum(s.wickets or 0 for s in bowling_stats),
         'highest_score': max((s.runs or 0 for s in batting_stats), default=0),
         'strike_rate': round(total_runs / balls_faced * 100, 2) if balls_faced else None,
-        'economy': round(runs_conceded / overs_bowled, 2) if overs_bowled else None,
+        'batting_average': batting_avg,
+        'fours': fours,
+        'sixes': sixes,
+        'fifties': fifties,
+        'hundreds': hundreds,
+        'economy': round(runs_conceded / total_overs_decimal, 2) if total_overs_decimal else None,
+        'best_bowling': best_bowling_str,
+        'four_wickets': four_wickets,
+        'five_wickets': five_wickets,
+        'dot_balls': dot_balls
     }
 
     return render_template('players/detail.html',
@@ -187,7 +243,7 @@ def matches():
                              .paginate(page=page, per_page=15, error_out=False))
 
         # One scalar query for the filter options instead of hydrating every match.
-        seasons = [row[0] for row in db.session.query(distinct(Match.season)).all()]
+        seasons = sorted([row[0] for row in db.session.query(distinct(Match.season)).all()], reverse=True)
 
         return render_template('matches/index.html',
                                matches=matches_list.items,
