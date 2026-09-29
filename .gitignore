@@ -22,8 +22,9 @@ build/
 *.egg
 
 # Flask
-instance/
 .webassets-cache
+!instance/
+!instance/cricketiq.db
 
 # Environment variables
 .env
@@ -49,7 +50,6 @@ htmlcov/
 *.log
 
 # Database
-*.db
 *.sqlite
 *.sqlite3
 
