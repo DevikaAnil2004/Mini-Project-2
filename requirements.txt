@@ -1,0 +1,13 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+python-dotenv
+mysql-connector-python
+PyMySQL
+SQLAlchemy>=2.0.51
+Werkzeug
+Jinja2
+scikit-learn
+pandas
+numpy
+joblib
