@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CricketIQ - Selenium Test Report</title><style>
+:root{--ink:#1a1a1a;--muted:#5b6072;--line:#c7cbdb;--navy:#0f1e3d;--amber:#f5a623;--ok:#15803d;--tint:#f7f7fa}
+*{box-sizing:border-box}
+body{font:15px/1.6 -apple-system,'Segoe UI',Calibri,Arial,sans-serif;color:var(--ink);margin:0;background:#fff}
+main{max-width:980px;margin:0 auto;padding:40px 24px 64px}
+header.banner{background:var(--navy);color:#fff;padding:36px 24px;border-bottom:4px solid var(--amber)}
+header.banner div{max-width:980px;margin:0 auto}
+header.banner p{margin:6px 0 0;color:#cadcfc}
+h1{font-size:28px;margin:0}
+main h1{display:none}
+h2{font-size:20px;color:var(--navy);margin:34px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px}
+td{border:1px solid var(--line);padding:8px 10px;vertical-align:top}
+tbody tr:nth-child(even){background:var(--tint)}
+code{font-family:Consolas,'Courier New',monospace;font-size:13px;background:var(--tint);padding:1px 5px;border-radius:4px}
+pre{background:var(--tint);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto}
+pre code{background:none;padding:0}
+strong{color:var(--navy)}
+a{color:#1d4ed8}
+.pass{display:inline-block;background:var(--ok);color:#fff;border-radius:999px;padding:2px 14px;font-weight:700}
+nav.links{margin:18px 0 0;font-size:14px}
+@media print{header.banner{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head>
+<body>
+<header class="banner"><div>
+<h1>CricketIQ - Selenium Test Report</h1>
+<p><span class="pass">59 / 59 passed</span> &nbsp; Chrome 154 headless &middot; Selenium 4.50 &middot; pytest 9.1</p>
+</div></header>
+<main>
+<nav class="links">Detailed per-test log: <a href="selenium_report.html">selenium_report.html</a> &middot; CI format: <a href="junit.xml">junit.xml</a></nav>
+<h1>CricketIQ — Selenium Test Report</h1>
+<table>
+
+<tbody>
+<tr>
+<td>Application</td>
+<td>CricketIQ (Flask + SQLite), served on <code>http://127.0.0.1:5055</code></td>
+</tr>
+<tr>
+<td>Browser / driver</td>
+<td>Chrome 154 headless, chromedriver auto-resolved by Selenium Manager</td>
+</tr>
+<tr>
+<td>Framework</td>
+<td>Selenium 4.50.0, pytest 9.1.1, pytest-html</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>3.13.3 (project <code>venv</code>)</td>
+</tr>
+<tr>
+<td>Data under test</td>
+<td>Live <code>instance/cricketiq.db</code> — 15 teams, 809 players, 1,243 matches</td>
+</tr>
+<tr>
+<td><strong>Result</strong></td>
+<td><strong>59 passed, 0 failed, 0 skipped — 65.6 s</strong></td>
+</tr>
+</tbody>
+</table>
+<h2>Commands used</h2>
+<pre><code class="language-bash"># 1. install test tooling into the project virtual environment
+venv/Scripts/python.exe -m pip install selenium pytest pytest-html
+
+# 2. run the full suite (starts the Flask server itself, drives Chrome, writes reports)
+venv/Scripts/python.exe -m pytest tests -v --tb=short \
+    --html=tests/reports/selenium_report.html --self-contained-html \
+    --junitxml=tests/reports/junit.xml
+
+# optional: run a single group
+venv/Scripts/python.exe -m pytest tests -k &quot;prediction&quot; -v
+</code></pre>
+<p>Outputs: <code>tests/reports/selenium_report.html</code> (open in a browser), <code>tests/reports/junit.xml</code> (CI-readable),
+and <code>tests/reports/screenshots/FAIL_&lt;test&gt;.png</code> (written automatically on any failure).</p>
+<p>No manual server start is needed — the <code>server</code> fixture in <code>tests/conftest.py</code> boots the app on port 5055
+and stops it afterwards. The desktop browser is 1440×900; the mobile fixture emulates a 390×844 phone.</p>
+<h2>Results by area</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th style="text-align: right;">Tests</th>
+<th>Result</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Page smoke</td>
+<td style="text-align: right;">11</td>
+<td>Pass</td>
+<td>Every page loads, title contains "CricketIQ", exactly one <code>&lt;h1&gt;</code> with the expected text</td>
+</tr>
+<tr>
+<td>Console health</td>
+<td style="text-align: right;">11</td>
+<td>Pass</td>
+<td>No <code>SEVERE</code> browser-console messages on any page (charts included)</td>
+</tr>
+<tr>
+<td>404 handling</td>
+<td style="text-align: right;">1</td>
+<td>Pass</td>
+<td>Unknown route renders the custom 404 page with a way home</td>
+</tr>
+<tr>
+<td>Shell / navigation</td>
+<td style="text-align: right;">3</td>
+<td>Pass</td>
+<td>Sidebar link navigates and sets <code>aria-current</code>; skip link is first Tab stop; theme toggle switches dark↔light and persists across reload</td>
+</tr>
+<tr>
+<td>Home</td>
+<td style="text-align: right;">1</td>
+<td>Pass</td>
+<td>Stat tiles equal the values returned by <code>/api/stats</code></td>
+</tr>
+<tr>
+<td>Teams</td>
+<td style="text-align: right;">3</td>
+<td>Pass</td>
+<td>Directory lists franchises; live filter narrows to one card; nonsense query shows the empty state; team page shows squad table</td>
+</tr>
+<tr>
+<td>Players</td>
+<td style="text-align: right;">5</td>
+<td>Pass</td>
+<td>Server search finds "Kohli"; role filter returns only that role; pagination keeps the filter; column sort toggles <code>aria-sort</code>; Kohli profile shows 9,346 runs, average, centuries</td>
+</tr>
+<tr>
+<td>Matches</td>
+<td style="text-align: right;">2</td>
+<td>Pass</td>
+<td>Season filter returns rows; match detail shows result and scorecard</td>
+</tr>
+<tr>
+<td>Analytics</td>
+<td style="text-align: right;">2</td>
+<td>Pass</td>
+<td>3 charts render with non-zero size; legend buttons toggle <code>aria-pressed</code></td>
+</tr>
+<tr>
+<td>Intelligence</td>
+<td style="text-align: right;">6</td>
+<td>Pass</td>
+<td>Match prediction (MI v CSK) returns probabilities summing to 100%; same-team and empty selections are rejected inline; player forecast returns a number; XI assistant returns exactly 11 players; similarity returns peers and a cluster badge</td>
+</tr>
+<tr>
+<td>API validation</td>
+<td style="text-align: right;">6</td>
+<td>Pass</td>
+<td><code>/api/stats</code> shape; five malformed API calls each return HTTP 400 with an <code>error</code> field</td>
+</tr>
+<tr>
+<td>Responsive</td>
+<td style="text-align: right;">2</td>
+<td>Pass</td>
+<td>No horizontal overflow at 390 px on six pages; mobile drawer opens and closes with Esc</td>
+</tr>
+<tr>
+<td>Accessibility</td>
+<td style="text-align: right;">6</td>
+<td>Pass</td>
+<td>Every input/select on five pages has a label; all decorative SVG icons are <code>aria-hidden</code></td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>59</strong></td>
+<td><strong>59 pass</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2>How the first runs went (honest log)</h2>
+<p>The first run had <strong>10 failures, all defects in the test harness, none in the application</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+<th>Fix in tests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Several <code>.text</code> assertions saw empty strings</td>
+<td>Selenium treats <code>opacity: 0</code> as not displayed; elements were still in their 280 ms fade-in</td>
+<td>Wait until <code>document.getAnimations()</code> is idle before asserting</td>
+</tr>
+<tr>
+<td>Clicks "intercepted" on lower-page buttons</td>
+<td><code>html { scroll-behavior: smooth }</code> — <code>scrollIntoView</code> was still animating when the click fired</td>
+<td>Scroll with <code>behavior: 'instant'</code> before clicking</td>
+</tr>
+<tr>
+<td>Mobile test reported 494 px scroll width</td>
+<td>Headless Chrome clamps window width to ~500 px, so the "390 px" test was not 390 px</td>
+<td>Use Chrome mobile device emulation and assert <code>innerWidth == 390</code></td>
+</tr>
+<tr>
+<td>Home <code>&lt;h1&gt;</code> check failed</td>
+<td>Test expected the product name; the h1 is the tagline "Every team, every player…"</td>
+<td>Corrected the expectation</td>
+</tr>
+</tbody>
+</table>
+<p>After these fixes the suite passed 59/59, and the mobile test now genuinely runs at 390 px.</p>
+<h2>Observations (not failures)</h2>
+<ul>
+<li>Match-prediction and forecast calls take ~1.5 s on the first request (model load) and ~10 ms afterwards; tests allow 40 s to be safe.</li>
+<li>Tests that read specific data (Kohli 9,346 runs, MI/CSK names) depend on the shipped database; re-seeding with different data would require updating those literals.</li>
+<li>The XI assistant is tested for <em>shape</em> (11 players, reasoning text), not for selection quality.</li>
+</ul>
+<h2>Limits of this test run</h2>
+<ul>
+<li>Chrome only (no Firefox/Edge/Safari), headless, on Windows.</li>
+<li>No load/performance testing and no visual-regression comparison.</li>
+<li>Accessibility checks are structural (labels, aria attributes, focus order); a full audit with axe-core or a screen reader was not run.</li>
+</ul>
+<h2>Files</h2>
+<pre><code>tests/
+├── conftest.py              # server + Chrome fixtures, screenshot-on-failure hook
+├── test_cricketiq_ui.py     # 59 test cases
+├── export_report.py         # renders this Markdown report to reports/TEST_REPORT.html
+├── pytest.ini
+└── reports/                 # selenium_report.html, junit.xml, TEST_REPORT.html
+</code></pre>
+</main></body></html>
