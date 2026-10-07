@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPL Data Analytics — Team 08</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0A1122;
+    --panel: #101B33;
+    --panel-2: #16233F;
+    --line: #26365A;
+    --floodlight: #F5A623;
+    --floodlight-dim: #7A5A22;
+    --pitch: #4FCB9A;
+    --text: #E9EDF6;
+    --text-dim: #93A0BD;
+    --text-faint: #5B6786;
+    --danger: #E8613F;
+    --radius: 4px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--floodlight);
+  }
+  h1,h2,h3{font-family:'Oswald', sans-serif; text-transform:uppercase; letter-spacing:.01em;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* ================= LANDING ================= */
+  #view-landing{position:relative;}
+
+  .floodlight-field{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(245,166,35,.14), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 85% -10%, rgba(79,203,154,.10), transparent 60%),
+      var(--bg);
+  }
+  .beam{
+    position:fixed; top:-40%; width:220px; height:180%;
+    background:linear-gradient(180deg, rgba(245,166,35,.16), transparent 70%);
+    filter:blur(6px);
+    transform:rotate(18deg);
+    animation:sweep 9s ease-in-out infinite;
+    z-index:0; pointer-events:none;
+  }
+  .beam.b2{left:20%; animation-delay:-3s; opacity:.6;}
+  .beam.b1{left:-5%;}
+  .beam.b3{left:60%; animation-delay:-6s; opacity:.5;}
+  @keyframes sweep{
+    0%,100%{transform:rotate(14deg) translateX(0);}
+    50%{transform:rotate(24deg) translateX(60px);}
+  }
+
+  nav{
+    position:relative; z-index:2;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:26px 6vw;
+    border-bottom:1px solid var(--line);
+    backdrop-filter:blur(2px);
+  }
+  .logo{font-family:'Oswald', sans-serif; font-weight:600; font-size:18px; letter-spacing:.04em;}
+  .logo span{color:var(--floodlight);}
+  .nav-links{display:flex; gap:32px; font-size:13px; color:var(--text-dim);}
+  .nav-links a:hover{color:var(--text);}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 22px;
+    border-radius:2px;
+    font-size:13px; font-weight:600;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    border:1px solid transparent;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn-primary{background:var(--floodlight); color:#171008;}
+  .btn-primary:hover{transform:translateY(-1px); box-shadow:0 8px 22px -8px rgba(245,166,35,.6);}
+  .btn-ghost{border-color:var(--line); color:var(--text);}
+  .btn-ghost:hover{border-color:var(--floodlight-dim); background:rgba(245,166,35,.06);}
+
+  .hero{
+    position:relative; z-index:2;
+    display:grid; grid-template-columns:1.1fr .9fr; gap:60px;
+    padding:8vw 6vw 6vw;
+    align-items:center;
+  }
+  .hero .eyebrow{margin-bottom:18px;}
+  .hero h1{
+    font-size:clamp(34px, 5vw, 64px);
+    line-height:1.04;
+    font-weight:700;
+    margin-bottom:22px;
+  }
+  .hero h1 em{font-style:normal; color:var(--floodlight);}
+  .hero p{
+    color:var(--text-dim); font-size:16px; line-height:1.7; max-width:46ch; margin-bottom:34px;
+  }
+  .hero-ctas{display:flex; gap:14px; margin-bottom:46px;}
+  .stat-row{display:flex; gap:0; border-top:1px solid var(--line);}
+  .stat{padding:18px 26px 0 0; border-right:1px solid var(--line); margin-right:26px;}
+  .stat:last-child{border-right:none;}
+  .stat .num{font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:500; color:var(--pitch);}
+  .stat .label{font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-top:4px;}
+
+  /* pitch radial diagram */
+  .pitch-wrap{position:relative; display:flex; align-items:center; justify-content:center;}
+  .pitch{width:100%; max-width:380px; aspect-ratio:1;}
+  .pitch-ring{fill:none; stroke:var(--line); stroke-width:1;}
+  .pitch-dot{fill:var(--floodlight);}
+  .pitch-dot.alt{fill:var(--pitch);}
+  .pitch-label{font-family:'IBM Plex Mono', monospace; fill:var(--text-faint); font-size:9px; text-transform:uppercase;}
+
+  section{position:relative; z-index:2; padding:5vw 6vw; border-top:1px solid var(--line);}
+  .section-head{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:44px; gap:20px; flex-wrap:wrap;}
+  .section-head h2{font-size:clamp(22px,3vw,32px);}
+  .section-head p{color:var(--text-dim); max-width:40ch; font-size:14px;}
+
+  /* workflow */
+  .flow{display:grid; grid-template-columns:repeat(5,1fr); gap:0;}
+  .flow-step{padding:22px 18px; border-left:1px solid var(--line); position:relative;}
+  .flow-step:first-child{border-left:none;}
+  .flow-step .n{font-family:'IBM Plex Mono', monospace; color:var(--floodlight); font-size:12px; margin-bottom:14px; display:block;}
+  .flow-step h3{font-size:14px; text-transform:none; font-family:'Inter'; font-weight:600; margin-bottom:8px;}
+  .flow-step p{font-size:12.5px; color:var(--text-dim); line-height:1.55;}
+  .flow-step::after{
+    content:"→"; position:absolute; right:-11px; top:26px; color:var(--text-faint); font-size:14px; z-index:1;
+  }
+  .flow-step:last-child::after{content:"";}
+
+  /* tools grid */
+  .tools-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line);}
+  .tool-card{background:var(--panel); padding:22px; min-height:120px; display:flex; flex-direction:column; justify-content:space-between;}
+  .tool-card .cat{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em;}
+  .tool-card .name{font-size:15px; font-weight:600; margin-top:14px;}
+  .tool-card .desc{font-size:12px; color:var(--text-dim); margin-top:6px; line-height:1.5;}
+
+  /* team */
+  .team-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  .team-card{border:1px solid var(--line); padding:20px; border-radius:var(--radius);}
+  .team-card .role{font-size:10px; color:var(--floodlight); font-family:'IBM Plex Mono', monospace; text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px;}
+  .team-card .name{font-size:15px; font-weight:600;}
+  .team-card.lead{background:var(--panel);}
+
+  footer{
+    position:relative; z-index:2;
+    padding:60px 6vw; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;
+  }
+  footer h2{font-size:clamp(22px,3.4vw,34px); max-width:16ch;}
+  .foot-meta{font-size:12px; color:var(--text-faint); font-family:'IBM Plex Mono', monospace;}
+
+  /* ================= LOGIN ================= */
+  #view-login{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    position:relative; padding:24px;
+  }
+  .login-card{
+    width:100%; max-width:400px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:38px 34px 30px;
+    position:relative;
+    z-index:2;
+  }
+  .card-tab{
+    position:absolute; top:-1px; left:34px; right:34px; height:3px;
+    background:linear-gradient(90deg, var(--floodlight), var(--pitch));
+  }
+  .login-back{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); margin-bottom:26px;}
+  .login-back:hover{color:var(--text);}
+  .login-head .eyebrow{margin-bottom:10px;}
+  .login-head h1{font-size:22px; margin-bottom:6px;}
+  .login-head p{font-size:13px; color:var(--text-dim); margin-bottom:28px;}
+  .field{margin-bottom:18px;}
+  .field label{
+    display:block; font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--text-faint); margin-bottom:8px; font-family:'IBM Plex Mono', monospace;
+  }
+  .field input{
+    width:100%; background:var(--bg); border:1px solid var(--line); color:var(--text);
+    padding:12px 13px; border-radius:2px; font-size:14px; font-family:'Inter';
+  }
+  .field input:focus{outline:none; border-color:var(--floodlight);}
+  .field input::placeholder{color:var(--text-faint);}
+  .row-between{display:flex; justify-content:space-between; align-items:center; margin:6px 0 24px; font-size:12.5px;}
+  .checkbox-line{display:flex; align-items:center; gap:8px; color:var(--text-dim);}
+  .checkbox-line input{accent-color:var(--floodlight);}
+  .row-between a{color:var(--floodlight);}
+  .row-between a:hover{text-decoration:underline;}
+  .submit-btn{width:100%; padding:13px; justify-content:center;}
+  .login-foot{margin-top:22px; font-size:12.5px; color:var(--text-dim); text-align:center;}
+  .demo-note{
+    margin-top:18px; padding:11px 13px; background:rgba(245,166,35,.08);
+    border:1px solid var(--floodlight-dim); border-radius:2px;
+    font-size:11.5px; color:var(--floodlight); font-family:'IBM Plex Mono', monospace;
+  }
+
+  /* ================= DASHBOARD WIREFRAME ================= */
+  #view-dashboard{min-height:100vh; display:flex;}
+  .wf-sidebar{
+    width:220px; flex-shrink:0; background:var(--panel);
+    border-right:1px dashed var(--line);
+    padding:24px 18px; display:flex; flex-direction:column; gap:6px;
+  }
+  .wf-logo{font-family:'Oswald'; font-size:14px; letter-spacing:.05em; margin-bottom:22px; text-transform:uppercase;}
+  .wf-logo span{color:var(--floodlight);}
+  .wf-nav-item{
+    padding:10px 12px; border:1px dashed var(--line); border-radius:2px;
+    font-size:12px; color:var(--text-dim); margin-bottom:2px;
+  }
+  .wf-nav-item.on{border-style:solid; border-color:var(--floodlight-dim); background:rgba(245,166,35,.06); color:var(--text);}
+  .wf-sidebar .tag{margin-top:auto; font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono', monospace; text-align:center; padding-top:16px; border-top:1px dashed var(--line);}
+
+  .wf-main{flex:1; padding:22px 28px; overflow:auto;}
+  .wf-topbar{
+    display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;
+    padding-bottom:18px; margin-bottom:22px; border-bottom:1px dashed var(--line);
+  }
+  .wf-topbar .exit{font-size:12px; color:var(--text-dim); display:flex; align-items:center; gap:6px;}
+  .wf-topbar .exit:hover{color:var(--text);}
+  .wf-filters{display:flex; gap:10px;}
+  .wf-chip{
+    border:1px dashed var(--line); border-radius:2px; padding:8px 14px;
+    font-size:11px; color:var(--text-faint); font-family:'IBM Plex Mono', monospace;
+  }
+  .wf-banner{
+    text-align:center; font-size:11px; color:var(--text-faint);
+    font-family:'IBM Plex Mono', monospace; letter-spacing:.08em; text-transform:uppercase;
+    margin-bottom:20px; padding:8px; border:1px dashed var(--line); border-radius:2px;
+  }
+
+  .kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;}
+  .kpi-box{border:1px dashed var(--line); border-radius:2px; padding:16px; background:var(--panel);}
+  .kpi-box .k-label{font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; font-family:'IBM Plex Mono', monospace;}
+  .kpi-box .k-val{font-family:'IBM Plex Mono', monospace; font-size:22px; margin-top:10px; color:var(--pitch);}
+  .kpi-box .k-ph{width:60%; height:8px; background:var(--line); margin-top:10px; border-radius:2px;}
+
+  .chart-grid{display:grid; grid-template-columns:1.3fr 1fr; gap:14px; margin-bottom:14px;}
+  .chart-grid.second{grid-template-columns:1fr 1fr;}
+  .chart-box{
+    border:1px dashed var(--line); border-radius:2px; background:var(--panel);
+    padding:16px; min-height:220px; display:flex; flex-direction:column;
+  }
+  .chart-box .c-head{display:flex; justify-content:space-between; font-size:11px; color:var(--text-faint); font-family:'IBM Plex Mono', monospace; text-transform:uppercase; letter-spacing:.05em; margin-bottom:14px;}
+  .chart-placeholder{
+    flex:1; border:1px dashed var(--line); border-radius:2px;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    background:
+      repeating-linear-gradient(135deg, rgba(255,255,255,.02) 0 10px, transparent 10px 20px);
+    color:var(--text-faint); font-size:11px; font-family:'IBM Plex Mono', monospace; text-align:center; padding:10px;
+  }
+  /* fake bars for the bar chart wireframe */
+  .fake-bars{display:flex; align-items:flex-end; gap:8px; height:100%; width:100%; padding:12px;}
+  .fake-bars i{flex:1; background:var(--line); border-radius:1px;}
+  .fake-line{width:100%; height:100%; padding:12px;}
+  .fake-pie{width:70px; height:70px; border-radius:50%; border:14px solid var(--floodlight-dim); border-top-color:var(--floodlight); border-right-color:var(--pitch);}
+
+  /* ================= RESPONSIVE ================= */
+  @media (max-width: 900px){
+    .hero{grid-template-columns:1fr; padding-top:14vw;}
+    .stat-row{flex-wrap:wrap; row-gap:16px;}
+    .flow{grid-template-columns:1fr; }
+    .flow-step{border-left:none; border-top:1px solid var(--line); padding-left:0;}
+    .flow-step:first-child{border-top:none;}
+    .flow-step::after{content:""; }
+    .tools-grid{grid-template-columns:repeat(2,1fr);}
+    .team-grid{grid-template-columns:repeat(2,1fr);}
+    .nav-links{display:none;}
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+    .chart-grid, .chart-grid.second{grid-template-columns:1fr;}
+    #view-dashboard{flex-direction:column;}
+    .wf-sidebar{width:100%; flex-direction:row; overflow-x:auto; border-right:none; border-bottom:1px dashed var(--line);}
+    .wf-sidebar .tag{display:none;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .beam{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ VIEW 1: LANDING ============ -->
+<div id="view-landing" class="view active">
+  <div class="floodlight-field"></div>
+  <div class="beam b1"></div>
+  <div class="beam b2"></div>
+  <div class="beam b3"></div>
+
+  <nav>
+    <div class="logo">IPL <span>DATA ANALYTICS</span></div>
+    <div class="nav-links">
+      <a href="#workflow">Workflow</a>
+      <a href="#tools">Tools</a>
+      <a href="#team">Team</a>
+    </div>
+    <button class="btn btn-primary" onclick="showView('login')">Enter Dashboard</button>
+  </nav>
+
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Mini Project · Team 08 · Dept. of Computer Applications</div>
+      <h1>Every over,<br>every toss,<br><em>every insight.</em></h1>
+      <p>A data analytics project that turns eighteen seasons of Indian Premier League cricket into a single, readable dashboard — from raw ball-by-ball records to the trends that decide matches.</p>
+      <div class="hero-ctas">
+        <button class="btn btn-primary" onclick="showView('login')">Enter Dashboard</button>
+        <a class="btn btn-ghost" href="#workflow">See the workflow</a>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div class="num">18</div><div class="label">Seasons covered</div></div>
+        <div class="stat"><div class="num">1,000+</div><div class="label">Matches processed</div></div>
+        <div class="stat"><div class="num">200K+</div><div class="label">Balls analyzed</div></div>
+        <div class="stat"><div class="num">4</div><div class="label">Chart types</div></div>
+      </div>
+    </div>
+
+    <div class="pitch-wrap">
+      <svg class="pitch" viewBox="0 0 300 300">
+        <circle class="pitch-ring" cx="150" cy="150" r="140"/>
+        <circle class="pitch-ring" cx="150" cy="150" r="95"/>
+        <circle class="pitch-ring" cx="150" cy="150" r="50"/>
+        <line class="pitch-ring" x1="150" y1="10" x2="150" y2="290"/>
+        <line class="pitch-ring" x1="10" y1="150" x2="290" y2="150"/>
+        <!-- scattered toss/win data points -->
+        <circle class="pitch-dot" cx="150" cy="60" r="4"/>
+        <circle class="pitch-dot alt" cx="205" cy="90" r="5"/>
+        <circle class="pitch-dot" cx="230" cy="150" r="3"/>
+        <circle class="pitch-dot alt" cx="205" cy="215" r="4"/>
+        <circle class="pitch-dot" cx="150" cy="245" r="6"/>
+        <circle class="pitch-dot alt" cx="95" cy="215" r="4"/>
+        <circle class="pitch-dot" cx="70" cy="150" r="5"/>
+        <circle class="pitch-dot alt" cx="95" cy="90" r="3"/>
+        <text class="pitch-label" x="150" y="30" text-anchor="middle">TOSS → WIN CORRELATION</text>
+        <text class="pitch-label" x="150" y="280" text-anchor="middle">FIELD FIRST</text>
+      </svg>
+    </div>
+  </div>
+
+  <section id="workflow">
+    <div class="section-head">
+      <h2>From raw data to dashboard</h2>
+      <p>The analytical pipeline behind the project, start to finish.</p>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><span class="n">01</span><h3>Collect</h3><p>Ball-by-ball and match-level IPL datasets sourced from Kaggle.</p></div>
+      <div class="flow-step"><span class="n">02</span><h3>Clean</h3><p>Structuring and preprocessing with Pandas and NumPy.</p></div>
+      <div class="flow-step"><span class="n">03</span><h3>Explore</h3><p>EDA to surface top scorers, wicket-takers, and venue effects.</p></div>
+      <div class="flow-step"><span class="n">04</span><h3>Visualize</h3><p>Bar charts, line graphs, heatmaps, and pie charts built in Matplotlib, Seaborn, and Plotly.</p></div>
+      <div class="flow-step"><span class="n">05</span><h3>Present</h3><p>Insights compiled into one interactive analytics dashboard.</p></div>
+    </div>
+  </section>
+
+  <section id="tools">
+    <div class="section-head">
+      <h2>Technologies & tools</h2>
+      <p>The stack used to move from spreadsheet to insight.</p>
+    </div>
+    <div class="tools-grid">
+      <div class="tool-card"><div class="cat">Language</div><div class="name">Python 3</div><div class="desc">Core language for cleaning, analysis, and visualization.</div></div>
+      <div class="tool-card"><div class="cat">Analysis</div><div class="name">Pandas</div><div class="desc">Manipulation and preprocessing of IPL datasets.</div></div>
+      <div class="tool-card"><div class="cat">Analysis</div><div class="name">NumPy</div><div class="desc">Numerical computation and array operations.</div></div>
+      <div class="tool-card"><div class="cat">Database</div><div class="name">MySQL</div><div class="desc">Storage and querying of structured match data.</div></div>
+      <div class="tool-card"><div class="cat">Visualization</div><div class="name">Matplotlib</div><div class="desc">Static bar graphs and line plots.</div></div>
+      <div class="tool-card"><div class="cat">Visualization</div><div class="name">Seaborn</div><div class="desc">Statistical visualizations and heatmaps.</div></div>
+      <div class="tool-card"><div class="cat">Visualization</div><div class="name">Plotly</div><div class="desc">Interactive charts and dashboard components.</div></div>
+      <div class="tool-card"><div class="cat">Environment</div><div class="name">Jupyter / Colab</div><div class="desc">Interactive coding, EDA, and documentation.</div></div>
+      <div class="tool-card"><div class="cat">Source</div><div class="name">Kaggle</div><div class="desc">Public ball-by-ball and match-level datasets.</div></div>
+      <div class="tool-card"><div class="cat">Versioning</div><div class="name">Git & GitHub</div><div class="desc">Source control and project history.</div></div>
+      <div class="tool-card"><div class="cat">Docs</div><div class="name">MS Word / Docs</div><div class="desc">Project report and written documentation.</div></div>
+      <div class="tool-card"><div class="cat">Domain</div><div class="name">Sports Analytics</div><div class="desc">Applying data science methods to cricket outcomes.</div></div>
+    </div>
+  </section>
+
+  <section id="team">
+    <div class="section-head">
+      <h2>Submitted by</h2>
+      <p>Department of Computer Applications, Team 08.</p>
+    </div>
+    <div class="team-grid">
+      <div class="team-card lead"><div class="role">Submitted To</div><div class="name">Dr. Amritha Priya K</div></div>
+      <div class="team-card"><div class="role">Team Member</div><div class="name">Ahana Saji</div></div>
+      <div class="team-card"><div class="role">Team Member</div><div class="name">Arjun T P</div></div>
+      <div class="team-card"><div class="role">Team Member</div><div class="name">Devika Anil</div></div>
+    </div>
+  </section>
+
+  <footer>
+    <h2>Ready to see the innings breakdown?</h2>
+    <button class="btn btn-primary" onclick="showView('login')">Enter Dashboard →</button>
+  </footer>
+</div>
+
+<!-- ============ VIEW 2: LOGIN ============ -->
+<div id="view-login" class="view">
+  <div class="floodlight-field"></div>
+  <div class="login-card">
+    <div class="card-tab"></div>
+    <a class="login-back" href="javascript:void(0)" onclick="showView('landing')">← Back to home</a>
+    <div class="login-head">
+      <div class="eyebrow">IPL Data Analytics</div>
+      <h1>Sign in</h1>
+      <p>Access the team dashboard to view match, player, and venue insights.</p>
+    </div>
+    <form onsubmit="event.preventDefault(); showView('dashboard');">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="you@team08.edu" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="••••••••" required>
+      </div>
+      <div class="row-between">
+        <label class="checkbox-line"><input type="checkbox"> Remember this device</label>
+        <a href="javascript:void(0)">Forgot password?</a>
+      </div>
+      <button type="submit" class="btn btn-primary submit-btn">Sign in</button>
+    </form>
+    <div class="demo-note">Prototype only — any email and password will sign you in.</div>
+    <div class="login-foot">No account? <a href="javascript:void(0)" style="color:var(--floodlight)">Request access</a></div>
+  </div>
+</div>
+
+<!-- ============ VIEW 3: DASHBOARD WIREFRAME ============ -->
+<div id="view-dashboard" class="view">
+  <aside class="wf-sidebar">
+    <div class="wf-logo">IPL <span>ANALYTICS</span></div>
+    <div class="wf-nav-item on">Overview</div>
+    <div class="wf-nav-item">Teams</div>
+    <div class="wf-nav-item">Players</div>
+    <div class="wf-nav-item">Venues</div>
+    <div class="wf-nav-item">Seasons</div>
+    <div class="tag">LOW-FIDELITY WIREFRAME — v0.1</div>
+  </aside>
+
+  <main class="wf-main">
+    <div class="wf-topbar">
+      <a class="exit" href="javascript:void(0)" onclick="showView('landing')">← Exit to landing page</a>
+      <div class="wf-filters">
+        <div class="wf-chip">[ Season: All ▾ ]</div>
+        <div class="wf-chip">[ Team: All ▾ ]</div>
+        <div class="wf-chip">[ Search... ]</div>
+      </div>
+    </div>
+
+    <div class="wf-banner">Overview — Season & Team Performance Dashboard (structural wireframe, not final visuals)</div>
+
+    <div class="kpi-row">
+      <div class="kpi-box"><div class="k-label">Total Matches</div><div class="k-val">[ 1,024 ]</div><div class="k-ph"></div></div>
+      <div class="kpi-box"><div class="k-label">Total Runs</div><div class="k-val">[ 268K ]</div><div class="k-ph"></div></div>
+      <div class="kpi-box"><div class="k-label">Total Wickets</div><div class="k-val">[ 11.2K ]</div><div class="k-ph"></div></div>
+      <div class="kpi-box"><div class="k-label">Toss → Win %</div><div class="k-val">[ 51% ]</div><div class="k-ph"></div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-box">
+        <div class="c-head"><span>Bar Chart</span><span>Most Successful Teams</span></div>
+        <div class="chart-placeholder">
+          <div class="fake-bars">
+            <i style="height:40%"></i><i style="height:70%"></i><i style="height:55%"></i>
+            <i style="height:90%"></i><i style="height:35%"></i><i style="height:60%"></i>
+            <i style="height:25%"></i>
+          </div>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="c-head"><span>Pie Chart</span><span>Toss Decision Split</span></div>
+        <div class="chart-placeholder" style="flex-direction:column; gap:10px;">
+          <div class="fake-pie"></div>
+          <span>[ bat vs field % ]</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-grid second">
+      <div class="chart-box">
+        <div class="c-head"><span>Line Graph</span><span>Season-wise Run Trends</span></div>
+        <div class="chart-placeholder">
+          <svg class="fake-line" viewBox="0 0 300 100" preserveAspectRatio="none">
+            <polyline points="0,80 40,60 80,65 120,40 160,50 200,20 240,35 300,15" fill="none" stroke="var(--pitch)" stroke-width="2" stroke-dasharray="4 3"/>
+          </svg>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="c-head"><span>Heatmap</span><span>Venue vs Match Outcome</span></div>
+        <div class="chart-placeholder" style="display:grid; grid-template-columns:repeat(6,1fr); gap:4px; padding:12px;">
+          <i style="background:rgba(245,166,35,.1); border-radius:2px;"></i><i style="background:rgba(245,166,35,.3); border-radius:2px;"></i><i style="background:rgba(245,166,35,.5); border-radius:2px;"></i><i style="background:rgba(79,203,154,.2); border-radius:2px;"></i><i style="background:rgba(245,166,35,.2); border-radius:2px;"></i><i style="background:rgba(79,203,154,.4); border-radius:2px;"></i>
+          <i style="background:rgba(79,203,154,.3); border-radius:2px;"></i><i style="background:rgba(245,166,35,.4); border-radius:2px;"></i><i style="background:rgba(79,203,154,.1); border-radius:2px;"></i><i style="background:rgba(245,166,35,.2); border-radius:2px;"></i><i style="background:rgba(79,203,154,.5); border-radius:2px;"></i><i style="background:rgba(245,166,35,.1); border-radius:2px;"></i>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  function showView(name){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    window.scrollTo(0,0);
+  }
+</script>
+</body>
+</html>

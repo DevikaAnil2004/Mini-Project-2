@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPL Data Analytics — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0A1122; --panel:#101B33; --panel-2:#16233F; --line:#26365A;
+    --floodlight:#F5A623; --floodlight-dim:#7A5A22; --pitch:#4FCB9A;
+    --text:#E9EDF6; --text-dim:#93A0BD; --text-faint:#5B6786; --danger:#E8613F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh;}
+  h1,h2,h3{font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.01em;}
+  a{color:inherit; text-decoration:none;}
+  select, button{font-family:inherit;}
+
+  .layout{display:flex; min-height:100vh;}
+
+  /* ---- sidebar ---- */
+  .sidebar{
+    width:220px; flex-shrink:0; background:var(--panel);
+    border-right:1px solid var(--line); padding:26px 18px; display:flex; flex-direction:column; gap:4px;
+  }
+  .brand{font-family:'Oswald'; font-size:15px; letter-spacing:.05em; margin-bottom:24px;}
+  .brand span{color:var(--floodlight);}
+  .nav-item{
+    padding:11px 13px; border-radius:3px; font-size:13px; color:var(--text-dim);
+    display:flex; align-items:center; gap:10px; cursor:pointer; border:1px solid transparent;
+  }
+  .nav-item:hover{color:var(--text); background:rgba(255,255,255,.03);}
+  .nav-item.active{background:rgba(245,166,35,.08); border-color:var(--floodlight-dim); color:var(--text);}
+  .nav-dot{width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.6;}
+  .sidebar-foot{margin-top:auto; font-size:10.5px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace; padding-top:16px; border-top:1px solid var(--line); line-height:1.6;}
+
+  /* ---- main ---- */
+  .main{flex:1; padding:26px 34px; max-width:100%; overflow-x:hidden;}
+  .topbar{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .topbar h1{font-size:22px; margin-bottom:6px;}
+  .topbar .sub{font-size:12.5px; color:var(--text-dim);}
+  .filters{display:flex; gap:10px; flex-wrap:wrap;}
+  .filters select{
+    background:var(--panel); color:var(--text); border:1px solid var(--line);
+    padding:9px 12px; border-radius:3px; font-size:12.5px; min-width:140px;
+  }
+  .filters select:focus{outline:none; border-color:var(--floodlight);}
+
+  .kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:16px;}
+  .kpi{
+    background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:18px 20px;
+    position:relative; overflow:hidden;
+  }
+  .kpi::before{
+    content:""; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--floodlight);
+  }
+  .kpi:nth-child(2)::before{background:var(--pitch);}
+  .kpi:nth-child(3)::before{background:var(--floodlight);}
+  .kpi:nth-child(4)::before{background:var(--pitch);}
+  .kpi .k-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;}
+  .kpi .k-val{font-family:'IBM Plex Mono',monospace; font-size:26px; margin-top:10px; font-weight:500;}
+  .kpi .k-delta{font-size:11px; margin-top:6px; color:var(--pitch);}
+  .kpi .k-delta.down{color:var(--danger);}
+
+  .grid{display:grid; grid-template-columns:1.4fr 1fr; gap:14px; margin-bottom:14px;}
+  .grid.two{grid-template-columns:1fr 1fr;}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:18px 20px;
+    display:flex; flex-direction:column;
+  }
+  .card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .card-head h3{font-size:12.5px; font-family:'Inter'; font-weight:600; text-transform:none; letter-spacing:0; color:var(--text);}
+  .card-head .tag{font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em;}
+  .card-body{position:relative; flex:1; min-height:220px;}
+
+  .legend-row{display:flex; gap:16px; margin-top:12px; font-size:11px; color:var(--text-dim); justify-content:center;}
+  .legend-row span{display:flex; align-items:center; gap:6px;}
+  .legend-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+
+  /* heatmap */
+  .heatmap{display:grid; grid-template-columns:110px repeat(5,1fr); gap:3px; font-size:10px;}
+  .hm-cell{
+    aspect-ratio:1; border-radius:2px; display:flex; align-items:center; justify-content:center;
+    color:#0A1122; font-family:'IBM Plex Mono',monospace; font-weight:500;
+  }
+  .hm-label{display:flex; align-items:center; color:var(--text-dim); font-size:10.5px; padding-right:6px;}
+  .hm-col-label{text-align:center; color:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-transform:uppercase; padding-bottom:4px;}
+
+  footer{font-size:10.5px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace; text-align:center; padding:20px 0 4px;}
+
+  @media (max-width: 980px){
+    .sidebar{display:none;}
+    .grid, .grid.two{grid-template-columns:1fr;}
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="brand">IPL <span>ANALYTICS</span></div>
+    <div class="nav-item active"><span class="nav-dot"></span>Overview</div>
+    <div class="nav-item"><span class="nav-dot"></span>Teams</div>
+    <div class="nav-item"><span class="nav-dot"></span>Players</div>
+    <div class="nav-item"><span class="nav-dot"></span>Venues</div>
+    <div class="nav-item"><span class="nav-dot"></span>Seasons</div>
+    <div class="sidebar-foot">TEAM 08<br>Dept. of Computer Applications<br>Sample dataset — for demonstration</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Season Overview</h1>
+        <div class="sub">Team, toss, and venue trends across IPL history</div>
+      </div>
+      <div class="filters">
+        <select id="seasonFilter">
+          <option value="all">All seasons (2008–2025)</option>
+          <option value="recent">Last 5 seasons</option>
+          <option value="early">First 5 seasons</option>
+        </select>
+        <select id="teamFilter">
+          <option value="all">All teams</option>
+          <option value="MI">Mumbai Indians</option>
+          <option value="CSK">Chennai Super Kings</option>
+          <option value="KKR">Kolkata Knight Riders</option>
+          <option value="RCB">Royal Challengers Bengaluru</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="k-label">Total Matches</div><div class="k-val" id="kpiMatches">1,024</div><div class="k-delta">Across 18 seasons</div></div>
+      <div class="kpi"><div class="k-label">Total Runs</div><div class="k-val" id="kpiRuns">268,410</div><div class="k-delta">Avg 262 / match</div></div>
+      <div class="kpi"><div class="k-label">Total Wickets</div><div class="k-val" id="kpiWickets">11,206</div><div class="k-delta">Avg 10.9 / match</div></div>
+      <div class="kpi"><div class="k-label">Toss → Win Rate</div><div class="k-val" id="kpiToss">51.4%</div><div class="k-delta down">Field-first bias</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-head"><h3>Most Successful Teams</h3><span class="tag">Titles won</span></div>
+        <div class="card-body"><canvas id="teamsChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Toss Decision Split</h3><span class="tag">Bat vs field</span></div>
+        <div class="card-body"><canvas id="tossChart"></canvas></div>
+        <div class="legend-row">
+          <span><i class="legend-dot" style="background:#F5A623"></i>Field first</span>
+          <span><i class="legend-dot" style="background:#4FCB9A"></i>Bat first</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid two">
+      <div class="card">
+        <div class="card-head"><h3>Season-wise Run Trends</h3><span class="tag">Total runs / season</span></div>
+        <div class="card-body"><canvas id="runsChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Venue vs Outcome</h3><span class="tag">Home win % by venue</span></div>
+        <div class="card-body" id="heatmapBody"></div>
+      </div>
+    </div>
+
+    <footer>IPL Data Analytics · Team 08 · Illustrative sample data for demonstration purposes</footer>
+  </main>
+</div>
+
+<script>
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#93A0BD';
+Chart.defaults.borderColor = '#26365A';
+
+const amber = '#F5A623', green = '#4FCB9A', line = '#26365A';
+
+// ---- sample datasets (illustrative) ----
+const teamData = {
+  labels: ['MI','CSK','KKR','SRH','RR','GT','RCB','DC'],
+  titles: [5,5,3,1,1,2,1,0]
+};
+const seasons = Array.from({length:18}, (_,i)=>2008+i);
+const runsAll = [16320,17510,18040,18860,19210,19870,20430,21050,21980,22640,23310,24180,25020,25890,26410,27230,28040,28960];
+const tossSplit = [58,42]; // field-first, bat-first
+
+const venues = ['Wankhede','Chepauk','Eden Gardens','Chinnaswamy','Narendra Modi'];
+
+const teamsChart = new Chart(document.getElementById('teamsChart'), {
+  type:'bar',
+  data:{ labels:teamData.labels, datasets:[{ data:teamData.titles, backgroundColor:teamData.labels.map((_,i)=> i%2? green:amber), borderRadius:3, maxBarThickness:34 }] },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{ y:{ beginAtZero:true, grid:{color:line}, ticks:{stepSize:1} }, x:{ grid:{display:false} } }
+  }
+});
+
+const tossChart = new Chart(document.getElementById('tossChart'), {
+  type:'doughnut',
+  data:{ labels:['Field first','Bat first'], datasets:[{ data:tossSplit, backgroundColor:[amber, green], borderColor:'#101B33', borderWidth:3 }] },
+  options:{ responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{ legend:{display:false} } }
+});
+
+const runsChart = new Chart(document.getElementById('runsChart'), {
+  type:'line',
+  data:{ labels:seasons, datasets:[{ data:runsAll, borderColor:green, backgroundColor:'rgba(79,203,154,.12)', fill:true, tension:.35, pointRadius:2, pointBackgroundColor:green }] },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{ y:{ grid:{color:line} }, x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:6} } }
+  }
+});
+
+// heatmap (5 venues x 5 outcome buckets)
+const outcomeCols = ['<120','120-150','150-180','180-210','210+'];
+const hmData = [
+  [12,28,35,20,5],
+  [8,22,40,25,5],
+  [15,30,32,18,5],
+  [10,20,38,26,6],
+  [14,26,33,21,6]
+];
+function hmColor(v){
+  const t = Math.min(v/45,1);
+  const r = Math.round(16 + t*(245-16));
+  const g = Math.round(27 + t*(166-27));
+  const b = Math.round(51 + t*(35-51));
+  return `rgb(${r},${g},${b})`;
+}
+const hmEl = document.getElementById('heatmapBody');
+let hmHTML = '<div class="heatmap"><div></div>';
+outcomeCols.forEach(c => hmHTML += `<div class="hm-col-label">${c}</div>`);
+venues.forEach((v,ri)=>{
+  hmHTML += `<div class="hm-label">${v}</div>`;
+  hmData[ri].forEach(val=>{
+    hmHTML += `<div class="hm-cell" style="background:${hmColor(val)}">${val}%</div>`;
+  });
+});
+hmHTML += '</div>';
+hmEl.innerHTML = hmHTML;
+
+// ---- filter interactivity (demo re-weighting of KPIs + charts) ----
+const seasonFilter = document.getElementById('seasonFilter');
+const teamFilter = document.getElementById('teamFilter');
+
+function applyFilters(){
+  const s = seasonFilter.value;
+  let idx = seasons.map((_,i)=>i);
+  if(s === 'recent') idx = idx.slice(-5);
+  if(s === 'early') idx = idx.slice(0,5);
+
+  const filteredRuns = idx.map(i=>runsAll[i]);
+  const filteredSeasons = idx.map(i=>seasons[i]);
+  runsChart.data.labels = filteredSeasons;
+  runsChart.data.datasets[0].data = filteredRuns;
+  runsChart.update();
+
+  const matchesPerSeason = 56 + Math.round(Math.random()*4);
+  document.getElementById('kpiMatches').textContent = (idx.length*matchesPerSeason).toLocaleString();
+  document.getElementById('kpiRuns').textContent = filteredRuns.reduce((a,b)=>a+b,0).toLocaleString();
+  document.getElementById('kpiWickets').textContent = Math.round(filteredRuns.reduce((a,b)=>a+b,0)/24).toLocaleString();
+
+  const team = teamFilter.value;
+  const highlight = teamData.labels.map(l => l===team ? amber : (team==='all' ? (teamData.labels.indexOf(l)%2? green:amber) : line));
+  teamsChart.data.datasets[0].backgroundColor = highlight;
+  teamsChart.update();
+}
+seasonFilter.addEventListener('change', applyFilters);
+teamFilter.addEventListener('change', applyFilters);
+
+// sidebar nav visual state
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
